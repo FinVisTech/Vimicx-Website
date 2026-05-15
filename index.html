@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vimicx — Live 3D Data Visualization in AR</title>
+  <meta name="description" content="Vimicx creates live 3D models displayed in AR glasses, transforming hard-to-interpret data into spatial understanding you can see, touch, and act on.">
+  <meta name="keywords" content="AR, augmented reality, 3D visualization, live data, AR glasses, spatial computing">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ===== Navigation ===== -->
+  <nav id="main-nav">
+    <div class="nav-logo">VIMI<span>CX</span></div>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how-it-works">How It Works</a></li>
+      <li><a href="#team">Team</a></li>
+      <li><a href="#cta" class="btn-primary">Get Early Access</a></li>
+    </ul>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <!-- ===== 3D Canvas (fixed background) ===== -->
+  <canvas id="three-canvas"></canvas>
+
+  <!-- ===== Hero Section ===== -->
+  <section id="hero">
+    <div class="hero-content">
+      <span class="label">Spatial Data Intelligence</span>
+      <h1 class="gradient-text">See Through<br>the Noise</h1>
+      <p>Live 3D models in AR glasses — transforming complex, hard-to-interpret data into spatial understanding you can see and act on.</p>
+      <a href="#about" class="btn-primary btn-large">Discover Vimicx</a>
+    </div>
+    <div class="scroll-indicator">
+      <span>Scroll</span>
+      <div class="arrow"></div>
+    </div>
+  </section>
+
+  <!-- ===== Transformation Section (pinned during 3D animation) ===== -->
+  <section id="transformation">
+    <div class="transform-overlay">
+      <div class="transform-text" id="t-text-1">
+        <span class="label">The Problem</span>
+        <h2 class="gradient-text">Too Many Screens.<br>Not Enough Clarity.</h2>
+        <p>Traditional dashboards drown you in flat, fragmented data across dozens of displays.</p>
+      </div>
+      <div class="transform-text" id="t-text-2">
+        <span class="label">Our Solution</span>
+        <h2 class="gradient-text">One Spatial View.<br>Total Understanding.</h2>
+        <p>Vimicx replaces cluttered screens with a single, intuitive 3D model rendered live in your AR glasses.</p>
+      </div>
+      <div class="transform-text" id="t-text-3">
+        <span class="label">See What Others Can't</span>
+        <h2 class="gradient-text">Reveal What's Hidden<br>Beneath the Surface.</h2>
+        <p>Highlight targets, topology, and subsurface structures in real-time — right before your eyes.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Content Sections ===== -->
+  <div class="content-section">
+
+    <!-- ===== About ===== -->
+    <section id="about">
+      <div class="about-visual reveal">
+        <canvas id="about-mesh-canvas" class="mesh-graphic"></canvas>
+      </div>
+      <div class="about-text">
+        <span class="label reveal">Who We Are</span>
+        <h2 class="reveal">Building the Future of<br><span class="gradient-text">Spatial Data</span></h2>
+        <p class="reveal">Vimicx is pioneering the next generation of data visualization. We build live 3D models that stream directly to augmented reality glasses, turning overwhelming datasets into spatial experiences that anyone can instantly understand.</p>
+        <p class="reveal">From marine navigation to industrial inspection, our technology replaces walls of screens with a single, immersive view — making hard-to-interpret data intuitive, actionable, and alive.</p>
+      </div>
+    </section>
+
+    <!-- ===== Features ===== -->
+    <section id="features">
+      <div class="section-header">
+        <span class="label reveal">Capabilities</span>
+        <h2 class="reveal">Why <span class="gradient-text">Vimicx</span></h2>
+        <p class="reveal">Our platform combines real-time 3D modeling with AR display technology to deliver unmatched spatial intelligence.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card reveal" id="feature-live-3d">
+          <div class="feature-icon">◈</div>
+          <h3>Live 3D Modeling</h3>
+          <p>Real-time mesh generation from sensor data — no pre-processing, no waiting. Your world, modeled as it happens.</p>
+        </div>
+        <div class="feature-card reveal" id="feature-ar">
+          <div class="feature-icon">◎</div>
+          <h3>AR Glass Native</h3>
+          <p>Purpose-built for augmented reality headsets. See 3D data overlaid on the real world with zero latency.</p>
+        </div>
+        <div class="feature-card reveal" id="feature-clarity">
+          <div class="feature-icon">◇</div>
+          <h3>Data Clarity Engine</h3>
+          <p>Our AI distills complex multi-dimensional datasets into clean spatial views that reveal patterns invisible on flat screens.</p>
+        </div>
+        <div class="feature-card reveal" id="feature-analytics">
+          <div class="feature-icon">▣</div>
+          <h3>Real-Time Analytics</h3>
+          <p>Live data overlays, anomaly highlighting, and predictive indicators — all rendered spatially in your field of view.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== How It Works ===== -->
+    <section id="how-it-works">
+      <div class="section-header">
+        <span class="label reveal">Process</span>
+        <h2 class="reveal">How It <span class="gradient-text">Works</span></h2>
+        <p class="reveal">Three steps from raw data to spatial understanding.</p>
+      </div>
+      <div class="steps">
+        <div class="step reveal">
+          <div class="step-number">01</div>
+          <div class="step-content">
+            <h3>Ingest & Fuse</h3>
+            <p>Connect any data source — sonar, LiDAR, IoT sensors, telemetry feeds. Our fusion engine merges them into a unified spatial model in milliseconds.</p>
+          </div>
+        </div>
+        <div class="step reveal">
+          <div class="step-number">02</div>
+          <div class="step-content">
+            <h3>Model & Render</h3>
+            <p>Our 3D engine constructs a live mesh — complete with topology, highlighted objects, and data layers — optimized for real-time AR display.</p>
+          </div>
+        </div>
+        <div class="step reveal">
+          <div class="step-number">03</div>
+          <div class="step-content">
+            <h3>Display & Act</h3>
+            <p>Stream the live 3D model directly to AR glasses. See targets, structures, and anomalies overlaid on your real-world environment. Act with confidence.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Stats ===== -->
+    <section id="stats" class="content-section">
+      <div class="stats-grid">
+        <div class="stat-item reveal">
+          <div class="stat-value gradient-text" data-target="5">&lt; 5ms</div>
+          <div class="stat-label">Rendering Latency</div>
+        </div>
+        <div class="stat-item reveal">
+          <div class="stat-value gradient-text">120 FPS</div>
+          <div class="stat-label">Smooth AR Display</div>
+        </div>
+        <div class="stat-item reveal">
+          <div class="stat-value gradient-text">360°</div>
+          <div class="stat-label">Spatial Coverage</div>
+        </div>
+        <div class="stat-item reveal">
+          <div class="stat-value gradient-text">∞</div>
+          <div class="stat-label">Data Layers</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Use Cases ===== -->
+    <section id="use-cases">
+      <div class="section-header">
+        <span class="label reveal">Applications</span>
+        <h2 class="reveal">Built for <span class="gradient-text">Every Domain</span></h2>
+        <p class="reveal">Wherever data is complex and decisions are critical, Vimicx brings clarity.</p>
+      </div>
+      <div class="use-cases-grid">
+        <div class="use-case-card reveal" id="uc-marine">
+          <div class="use-case-icon">🚤</div>
+          <h3>Marine & Fishing</h3>
+          <p>Replace banks of sonar screens with a live 3D underwater view. See structure, fish, and bottom topology in real-time through AR glasses.</p>
+        </div>
+        <div class="use-case-card reveal" id="uc-industrial">
+          <div class="use-case-icon">🏭</div>
+          <h3>Industrial Inspection</h3>
+          <p>Overlay thermal, structural, and sensor data onto physical infrastructure. Spot defects, stress points, and anomalies at a glance.</p>
+        </div>
+        <div class="use-case-card reveal" id="uc-defense">
+          <div class="use-case-icon">🛡️</div>
+          <h3>Defense & Security</h3>
+          <p>Fuse radar, sonar, and surveillance feeds into a unified 3D operational picture. Enhanced situational awareness for any environment.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Team ===== -->
+    <section id="team">
+      <div class="section-header">
+        <span class="label reveal">Our Team</span>
+        <h2 class="reveal">The Minds Behind <span class="gradient-text">Vimicx</span></h2>
+        <p class="reveal">Visionaries building the bridge between raw data and spatial understanding.</p>
+      </div>
+      <div class="team-grid">
+        <div class="team-card reveal" id="team-ceo">
+          <div class="team-photo">
+            <img src="img/ceo.webp" alt="CEO placeholder" id="ceo-photo">
+          </div>
+          <h3>Alex Morgan</h3>
+          <div class="role">Chief Executive Officer</div>
+          <p class="bio">Serial entrepreneur with 15+ years in spatial computing and enterprise AR. Obsessed with making data intuitive.</p>
+        </div>
+        <div class="team-card reveal" id="team-cto">
+          <div class="team-photo">
+            <img src="img/cto.webp" alt="CTO placeholder" id="cto-photo">
+          </div>
+          <h3>Jordan Chen</h3>
+          <div class="role">Chief Technology Officer</div>
+          <p class="bio">Former lead engineer at a top AR hardware lab. Expert in real-time 3D rendering and sensor fusion systems.</p>
+        </div>
+        <div class="team-card reveal" id="team-board">
+          <div class="team-photo">
+            <img src="img/board.webp" alt="Board Member placeholder" id="board-photo">
+          </div>
+          <h3>Sam Rivera</h3>
+          <div class="role">Board Member</div>
+          <p class="bio">Veteran investor and advisor in deep tech and defense innovation. Guiding Vimicx's strategic growth.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== CTA ===== -->
+    <section id="cta">
+      <span class="label reveal">Join Us</span>
+      <h2 class="reveal">Ready to See the <span class="gradient-text">Unseen</span>?</h2>
+      <p class="reveal">Be among the first to experience spatial data intelligence. Request early access or get in touch with our team.</p>
+      <div class="cta-buttons reveal">
+        <a href="#" class="btn-primary btn-large" id="cta-access-btn">Request Early Access</a>
+        <a href="#" class="btn-secondary btn-large" id="cta-contact-btn">Contact Us</a>
+      </div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer id="main-footer">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <div class="nav-logo">VIMI<span>CX</span></div>
+          <p>Transforming complex data into spatial understanding through live 3D models and augmented reality.</p>
+        </div>
+        <div class="footer-links">
+          <div>
+            <h4>Product</h4>
+            <ul>
+              <li><a href="#features">Features</a></li>
+              <li><a href="#how-it-works">How It Works</a></li>
+              <li><a href="#use-cases">Use Cases</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Company</h4>
+            <ul>
+              <li><a href="#about">About</a></li>
+              <li><a href="#team">Team</a></li>
+              <li><a href="#">Careers</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Connect</h4>
+            <ul>
+              <li><a href="#">Twitter / X</a></li>
+              <li><a href="#">LinkedIn</a></li>
+              <li><a href="#">Contact</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 Vimicx Inc. All rights reserved.</span>
+        <span>Built with spatial intelligence.</span>
+      </div>
+    </footer>
+
+  </div><!-- /.content-section -->
+
+  <!-- ===== Screen Editor Panel ===== -->
+  <div id="screen-editor" style="display:none;">
+    <div class="editor-header">
+      <span class="editor-title">🖥️ Screen Editor</span>
+      <button id="editor-close-btn" title="Close editor">✕</button>
+    </div>
+
+    <div class="editor-screens-list" id="editor-screens-list">
+      <!-- Screen buttons populated by JS -->
+    </div>
+
+    <div class="editor-actions-row">
+      <button id="editor-add-btn" title="Add new screen">+ Add</button>
+      <button id="editor-dup-btn" title="Duplicate selected">⧉ Dup</button>
+      <button id="editor-del-btn" title="Delete selected">🗑 Del</button>
+    </div>
+
+    <div class="editor-controls" id="editor-controls">
+      <div class="editor-group">
+        <label>Position X <span class="editor-val" id="ev-px">0</span></label>
+        <input type="range" id="es-px" min="-4" max="4" step="0.01" value="0">
+      </div>
+      <div class="editor-group">
+        <label>Position Y <span class="editor-val" id="ev-py">0</span></label>
+        <input type="range" id="es-py" min="-2" max="3" step="0.01" value="0">
+      </div>
+      <div class="editor-group">
+        <label>Position Z <span class="editor-val" id="ev-pz">0</span></label>
+        <input type="range" id="es-pz" min="-3" max="3" step="0.01" value="0">
+      </div>
+      <hr class="editor-sep">
+      <div class="editor-group">
+        <label>Tilt (Rot X) <span class="editor-val" id="ev-rx">0°</span></label>
+        <input type="range" id="es-rx" min="-180" max="180" step="1" value="0">
+        <div class="editor-presets" id="presets-rx">
+          <button data-deg="0">Flat</button>
+          <button data-deg="-15">-15°</button>
+          <button data-deg="-30">-30°</button>
+          <button data-deg="-45">-45°</button>
+          <button data-deg="-60">-60°</button>
+          <button data-deg="-90">-90°</button>
+        </div>
+      </div>
+      <div class="editor-group">
+        <label>Yaw (Rot Y) <span class="editor-val" id="ev-ry">0°</span></label>
+        <input type="range" id="es-ry" min="-180" max="180" step="1" value="0">
+        <div class="editor-presets" id="presets-ry">
+          <button data-deg="0">0°</button>
+          <button data-deg="-20">-20°</button>
+          <button data-deg="20">20°</button>
+          <button data-deg="-45">-45°</button>
+          <button data-deg="45">45°</button>
+        </div>
+      </div>
+      <div class="editor-group">
+        <label>Roll (Rot Z) <span class="editor-val" id="ev-rz">0°</span></label>
+        <input type="range" id="es-rz" min="-180" max="180" step="1" value="0">
+      </div>
+      <hr class="editor-sep">
+      <div class="editor-group">
+        <label>Width <span class="editor-val" id="ev-w">0.5</span></label>
+        <input type="range" id="es-w" min="0.05" max="2" step="0.01" value="0.5">
+      </div>
+      <div class="editor-group">
+        <label>Height <span class="editor-val" id="ev-h">0.35</span></label>
+        <input type="range" id="es-h" min="0.05" max="2" step="0.01" value="0.35">
+      </div>
+      <hr class="editor-sep">
+      <div class="editor-group">
+        <label>Color</label>
+        <input type="color" id="es-color" value="#00f0ff">
+      </div>
+    </div>
+
+    <div class="editor-export-row">
+      <button id="editor-export-btn">📋 Copy Log to Clipboard</button>
+    </div>
+    <div class="editor-export-row">
+      <button id="editor-log-btn">📄 Show Log in Console</button>
+    </div>
+    <pre id="editor-log-output" style="display:none;"></pre>
+  </div>
+
+  <!-- ===== Editor Toggle Button (always visible) ===== -->
+  <button id="editor-toggle-btn" title="Toggle Screen Editor">🖥️ Edit Screens</button>
+
+  <!-- ===== Scripts ===== -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
+  <script src="main.js"></script>
+  <script src="screen-editor.js"></script>
+</body>
+</html>
