@@ -8,17 +8,19 @@ let renderer, scene, camera, orbitControls;
 let boatGroup, screenMeshes = [], screenEdges = [];
 let wireframeClones = [];
 let fishGroup, fishBody, fishGlow, scanLine;
-let waterPlane;
+let waterPlane, waterGeo;
+let bassModelGroup; // Low poly bass — locked to terrain, NOT riding waves
 let editorMode = false;
 let animState = {
   screenOpacity: 1,
-  wireframeProgress: 0,
+  terrainReveal: 0,
   fishVisibility: 0,
   scanLinePos: -2,
   boatRotY: 0,
   cameraY: 3,
   cameraZ: 8,
-  canvasOpacity: 1
+  canvasOpacity: 1,
+  waterOpacity: 1
 };
 let clock;
 
@@ -237,143 +239,178 @@ function buildScreens() {
   });
 }
 
-// ===== WIREFRAME CLONES =====
+// ===== WIREFRAME CLONES (disabled — boat stays solid) =====
 function buildWireframeClones() {
-  boatGroup.children.forEach(child => {
-    if (child.isMesh && !screenMeshes.includes(child)) {
-      const clone = child.clone();
-      clone.material = new THREE.MeshBasicMaterial({
-        color: 0x00f0ff, wireframe: true, transparent: true, opacity: 0
-      });
-      clone.name = 'wire_' + child.name;
-      boatGroup.add(clone);
-      wireframeClones.push(clone);
-
-      // Edge highlight
-      if (child.geometry) {
-        const edgeGeo = new THREE.EdgesGeometry(child.geometry, 15);
-        const edgeMat = new THREE.LineBasicMaterial({
-          color: 0x00f0ff, transparent: true, opacity: 0
-        });
-        const edgeLines = new THREE.LineSegments(edgeGeo, edgeMat);
-        edgeLines.position.copy(child.position);
-        edgeLines.rotation.copy(child.rotation);
-        edgeLines.scale.copy(child.scale);
-        boatGroup.add(edgeLines);
-        wireframeClones.push(edgeLines);
-      }
-    }
-  });
+  // No longer creating wireframe clones of the boat hull.
+  // The boat remains solid throughout the entire animation.
 }
 
-// ===== FISH =====
+// ===== FISH (Low Poly Bass STL — replaces procedural fish) =====
 function buildFish() {
-  fishGroup = new THREE.Group();
+  // Create a group for the bass model, added to scene (not boatGroup)
+  // so we can lock it to terrain-space manually
+  bassModelGroup = new THREE.Group();
+  bassModelGroup.position.set(0, -1.0, 0);
+  bassModelGroup.visible = false; // hidden until fish reveal phase
+  scene.add(bassModelGroup);
 
-  // Body using LatheGeometry
-  const pts = [];
-  const profile = [
-    [0, 0], [0.08, 0.12], [0.2, 0.22], [0.35, 0.3], [0.55, 0.32],
-    [0.8, 0.28], [1.0, 0.2], [1.15, 0.14], [1.3, 0.09], [1.4, 0.06],
-    [1.45, 0.12], [1.55, 0.04], [1.6, 0]
-  ];
-  profile.forEach(p => pts.push(new THREE.Vector2(p[1] * 1.8, p[0] * 2.5)));
 
-  const bodyGeo = new THREE.LatheGeometry(pts, 16);
-  const bodyMat = new THREE.MeshBasicMaterial({
-    color: 0xff00aa, wireframe: true, transparent: true, opacity: 0
+
+  // Load the LowPolyBass STL
+  const loader = new THREE.STLLoader();
+  loader.load('3d assets/LowPolyBass.stl', function (geometry) {
+    // --- Orientation fix: STL is Z-up, Three.js is Y-up ---
+    geometry.rotateX(-Math.PI / 2);
+
+    // Center the geometry
+    geometry.computeBoundingBox();
+    const box = geometry.boundingBox;
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    geometry.translate(-center.x, -center.y, -center.z);
+
+    // Scale to fit (~3.5 units)
+    geometry.computeBoundingBox();
+    const size = new THREE.Vector3();
+    geometry.boundingBox.getSize(size);
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const targetSize = 3.5;
+    const scaleFactor = targetSize / maxDim;
+    geometry.scale(scaleFactor, scaleFactor, scaleFactor);
+
+    geometry.computeVertexNormals();
+    geometry.computeBoundingBox();
+
+    console.log('LowPolyBass loaded, size:', size.multiplyScalar(scaleFactor));
+
+    // Decimate via vertex clustering — snap vertices to a 3D grid,
+    // rebuild connected triangles, then draw wireframe edges.
+    // This produces a proper connected mesh wireframe (not scattered points).
+    const pos = geometry.attributes.position;
+    const gridSize = 0.14; // larger = fewer edges, more low-poly look
+    const vertexMap = new Map();
+    const newPositions = [];
+    const newIndices = [];
+    let newVertexCount = 0;
+    const vertexRemap = new Int32Array(pos.count);
+
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+      const gx = Math.round(x / gridSize);
+      const gy = Math.round(y / gridSize);
+      const gz = Math.round(z / gridSize);
+      const key = gx + ',' + gy + ',' + gz;
+
+      if (!vertexMap.has(key)) {
+        vertexMap.set(key, newVertexCount);
+        // Use snapped grid position for cleaner mesh
+        newPositions.push(gx * gridSize, gy * gridSize, gz * gridSize);
+        newVertexCount++;
+      }
+      vertexRemap[i] = vertexMap.get(key);
+    }
+
+    // Rebuild faces — skip degenerate triangles where vertices collapsed
+    const faceCount = pos.count / 3;
+    const edgeSet = new Set(); // deduplicate shared edges
+    const edgePoints = [];
+
+    for (let f = 0; f < faceCount; f++) {
+      const a = vertexRemap[f * 3];
+      const b = vertexRemap[f * 3 + 1];
+      const c = vertexRemap[f * 3 + 2];
+      if (a === b || b === c || a === c) continue; // degenerate
+
+      // Add each edge (deduplicated)
+      const edges = [[a, b], [b, c], [c, a]];
+      edges.forEach(([v0, v1]) => {
+        const eKey = Math.min(v0, v1) + ':' + Math.max(v0, v1);
+        if (!edgeSet.has(eKey)) {
+          edgeSet.add(eKey);
+          const i0 = v0 * 3, i1 = v1 * 3;
+          edgePoints.push(
+            newPositions[i0], newPositions[i0 + 1], newPositions[i0 + 2],
+            newPositions[i1], newPositions[i1 + 1], newPositions[i1 + 2]
+          );
+        }
+      });
+    }
+
+    console.log('Bass wireframe: ' + edgeSet.size + ' edges from ' + newVertexCount + ' vertices');
+
+    const wireGeo = new THREE.BufferGeometry();
+    wireGeo.setAttribute('position', new THREE.Float32BufferAttribute(edgePoints, 3));
+
+    const wireMat = new THREE.LineBasicMaterial({
+      color: 0xff4500,
+      transparent: true,
+      opacity: 0
+    });
+    const wireLines = new THREE.LineSegments(wireGeo, wireMat);
+    wireLines.name = 'bass_wireframe';
+    bassModelGroup.add(wireLines);
+  },
+  function (xhr) {
+    console.log('LowPolyBass STL: ' + (xhr.loaded / xhr.total * 100).toFixed(0) + '% loaded');
+  },
+  function (error) {
+    console.error('Error loading LowPolyBass STL:', error);
   });
-  fishBody = new THREE.Mesh(bodyGeo, bodyMat);
-  fishBody.rotation.z = Math.PI / 2;
-  fishBody.position.set(0, 0, 0);
-  fishGroup.add(fishBody);
-
-  // Glow body clone
-  const glowMat = new THREE.MeshBasicMaterial({
-    color: 0xff00aa, transparent: true, opacity: 0, side: THREE.DoubleSide
-  });
-  fishGlow = new THREE.Mesh(bodyGeo.clone(), glowMat);
-  fishGlow.rotation.copy(fishBody.rotation);
-  fishGlow.scale.set(1.05, 1.05, 1.05);
-  fishGroup.add(fishGlow);
-
-  // Dorsal fin
-  const finShape = new THREE.Shape();
-  finShape.moveTo(0, 0);
-  finShape.quadraticCurveTo(0.3, 0.6, 0.8, 0.3);
-  finShape.lineTo(1.2, 0);
-  const finGeo = new THREE.ShapeGeometry(finShape);
-  const finMat = new THREE.MeshBasicMaterial({
-    color: 0xff00aa, wireframe: true, transparent: true, opacity: 0, side: THREE.DoubleSide
-  });
-  const fin = new THREE.Mesh(finGeo, finMat);
-  fin.position.set(-0.8, 0.55, 0);
-  fin.rotation.y = Math.PI / 2;
-  fishGroup.add(fin);
-
-  // Tail fin
-  const tailShape = new THREE.Shape();
-  tailShape.moveTo(0, 0);
-  tailShape.quadraticCurveTo(0.4, 0.5, 0.6, 0.4);
-  tailShape.lineTo(0.2, 0);
-  tailShape.lineTo(0.6, -0.4);
-  tailShape.quadraticCurveTo(0.4, -0.5, 0, 0);
-  const tailGeo = new THREE.ShapeGeometry(tailShape);
-  const tailMat = finMat.clone();
-  const tail = new THREE.Mesh(tailGeo, tailMat);
-  tail.position.set(1.9, 0, 0);
-  tail.rotation.y = Math.PI / 2;
-  fishGroup.add(tail);
-
-  // Scan line
-  const scanGeo = new THREE.PlaneGeometry(0.05, 1.5);
-  const scanMat = new THREE.MeshBasicMaterial({
-    color: 0xff00aa, transparent: true, opacity: 0, side: THREE.DoubleSide
-  });
-  scanLine = new THREE.Mesh(scanGeo, scanMat);
-  scanLine.rotation.y = Math.PI / 2;
-  fishGroup.add(scanLine);
-
-  fishGroup.position.set(0, -2.2, 0);
-  fishGroup.scale.set(0.8, 0.8, 0.8);
-  scene.add(fishGroup);
 }
 
 // ===== UNDERWATER TERRAIN TOPOLOGY =====
 let terrainMesh, terrainEdges, terrainContours;
 
 function buildWater() {
-  // Procedural lake-bottom terrain — wireframe topology below the boat
-  // Uses layered noise for ridges, channels, and drop-offs
+  const sizeX = 14, sizeZ = 10;
 
+  // ---- LAYER 1: Opaque animated water surface (visible at start) ----
+  const waterSegW = 100, waterSegH = 100;
+  waterGeo = new THREE.PlaneGeometry(sizeX, sizeZ, waterSegW, waterSegH);
+  waterGeo.rotateX(-Math.PI / 2);
+
+  // Store original Y positions for ripple animation
+  const wPos = waterGeo.attributes.position;
+  waterGeo.userData.baseY = new Float32Array(wPos.count);
+  for (let i = 0; i < wPos.count; i++) {
+    waterGeo.userData.baseY[i] = wPos.getY(i);
+  }
+
+  const waterMat = new THREE.MeshPhongMaterial({
+    color: 0x041830,
+    specular: 0x0088aa,
+    shininess: 90,
+    transparent: true,
+    opacity: 0.95,
+    side: THREE.DoubleSide,
+    flatShading: false
+  });
+  waterPlane = new THREE.Mesh(waterGeo, waterMat);
+  waterPlane.position.y = -0.35;
+  waterPlane.name = 'water_surface';
+  waterPlane.receiveShadow = true;
+  boatGroup.add(waterPlane);
+
+  // ---- LAYER 2: Terrain wiremesh topology (hidden initially, revealed on scroll) ----
   const segW = 80, segH = 80;
-  const sizeX = 12, sizeZ = 8;   // wider along boat length, narrower across beam
-  const terrainGeo = new THREE.PlaneGeometry(sizeX, sizeZ, segW, segH);
-  terrainGeo.rotateX(-Math.PI / 2); // lay flat
+  const terrainGeo = new THREE.PlaneGeometry(sizeX, sizeZ * 0.8, segW, segH);
+  terrainGeo.rotateX(-Math.PI / 2);
 
   const pos = terrainGeo.attributes.position;
 
-  // Layered noise function for terrain height
   function terrainHeight(x, z) {
-    // Large-scale rolling hills / ridges
     let h = Math.sin(x * 0.4) * Math.cos(z * 0.5) * 0.8;
-    // Channel running along the boat's path
     h += Math.exp(-z * z * 0.8) * -0.5;
-    // Medium features — rocky ridges
     h += Math.sin(x * 1.2 + z * 0.8) * 0.3;
     h += Math.cos(x * 0.7 - z * 1.5) * 0.25;
-    // Fine detail — bumps and texture
     h += Math.sin(x * 3.0 + 1.5) * Math.cos(z * 2.8 + 0.7) * 0.12;
     h += Math.sin(x * 4.5 - z * 3.2) * 0.06;
-    // Drop-off on one side (deeper toward +Z)
     h += Math.min(0, (z - 2.0) * 0.3);
-    // Slight mound under the boat
     const dist = Math.sqrt(x * x + z * z);
     h += Math.exp(-dist * dist * 0.06) * 0.4;
     return h;
   }
 
-  // Apply terrain heights
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i);
     const z = pos.getZ(i);
@@ -382,31 +419,23 @@ function buildWater() {
   pos.needsUpdate = true;
   terrainGeo.computeVertexNormals();
 
-  // Main wireframe mesh
   const terrainMat = new THREE.MeshBasicMaterial({
-    color: 0x00f0ff,
-    wireframe: true,
-    transparent: true,
-    opacity: 0.12
+    color: 0x00f0ff, wireframe: true, transparent: true, opacity: 0
   });
   terrainMesh = new THREE.Mesh(terrainGeo, terrainMat);
-  terrainMesh.position.y = -1.8; // below the hull
+  terrainMesh.position.y = -1.8;
   terrainMesh.name = 'terrain';
   boatGroup.add(terrainMesh);
 
-  // Edge highlights for prominent ridges
   const edgeGeo = new THREE.EdgesGeometry(terrainGeo, 12);
   const edgeMat = new THREE.LineBasicMaterial({
-    color: 0x00f0ff,
-    transparent: true,
-    opacity: 0.2
+    color: 0x00f0ff, transparent: true, opacity: 0
   });
   terrainEdges = new THREE.LineSegments(edgeGeo, edgeMat);
   terrainEdges.position.copy(terrainMesh.position);
   terrainEdges.name = 'terrain_edges';
   boatGroup.add(terrainEdges);
 
-  // Depth contour rings — concentric lines at different depth levels
   terrainContours = new THREE.Group();
   terrainContours.position.copy(terrainMesh.position);
   terrainContours.name = 'terrain_contours';
@@ -417,11 +446,9 @@ function buildWater() {
   contourLevels.forEach((level, ci) => {
     const points = [];
     const step = 0.15;
-    // Trace contour lines by scanning the terrain
     for (let x = -sizeX / 2; x < sizeX / 2; x += step) {
-      for (let z = -sizeZ / 2; z < sizeZ / 2; z += step) {
+      for (let z = -sizeZ / 2 * 0.8; z < sizeZ / 2 * 0.8; z += step) {
         const h = terrainHeight(x, z);
-        // Check if this cell crosses the contour level
         const hR = terrainHeight(x + step, z);
         const hD = terrainHeight(x, z + step);
         if ((h - level) * (hR - level) < 0 || (h - level) * (hD - level) < 0) {
@@ -433,10 +460,7 @@ function buildWater() {
     if (points.length > 0) {
       const contourGeo = new THREE.BufferGeometry().setFromPoints(points);
       const contourMat = new THREE.PointsMaterial({
-        color: contourColors[ci],
-        size: 0.04,
-        transparent: true,
-        opacity: 0.25
+        color: contourColors[ci], size: 0.04, transparent: true, opacity: 0
       });
       const contourPts = new THREE.Points(contourGeo, contourMat);
       terrainContours.add(contourPts);
@@ -444,20 +468,6 @@ function buildWater() {
   });
 
   boatGroup.add(terrainContours);
-
-  // Subtle sonar sweep glow plane (sits at water surface level)
-  const waterSurfaceGeo = new THREE.PlaneGeometry(sizeX * 1.3, sizeZ * 1.3);
-  const waterSurfaceMat = new THREE.MeshBasicMaterial({
-    color: 0x041428,
-    transparent: true,
-    opacity: 0.3,
-    side: THREE.DoubleSide
-  });
-  waterPlane = new THREE.Mesh(waterSurfaceGeo, waterSurfaceMat);
-  waterPlane.rotation.x = -Math.PI / 2;
-  waterPlane.position.y = -0.5;
-  waterPlane.name = 'water_surface';
-  boatGroup.add(waterPlane);
 }
 
 // ===== PARTICLES =====
@@ -557,19 +567,19 @@ function setupScrollAnimations() {
     }
   });
 
-  // Phase 1: Screens flicker and fade (0-25%)
-  tl.to(animState, { screenOpacity: 0.3, duration: 0.05 })
-    .to(animState, { screenOpacity: 0.8, duration: 0.02 })
-    .to(animState, { screenOpacity: 0.1, duration: 0.03 })
-    .to(animState, { screenOpacity: 0.6, duration: 0.02 })
-    .to(animState, { screenOpacity: 0, duration: 0.08 });
+  // Phase 1: Screens AND water flicker and fade together (0-25%)
+  tl.to(animState, { screenOpacity: 0.3, waterOpacity: 0.4, duration: 0.05 })
+    .to(animState, { screenOpacity: 0.8, waterOpacity: 0.9, duration: 0.02 })
+    .to(animState, { screenOpacity: 0.1, waterOpacity: 0.15, duration: 0.03 })
+    .to(animState, { screenOpacity: 0.6, waterOpacity: 0.7, duration: 0.02 })
+    .to(animState, { screenOpacity: 0, waterOpacity: 0, duration: 0.08 });
 
   // Show problem text
   tl.to('#t-text-1', { opacity: 1, duration: 0.08 }, 0.05)
     .to('#t-text-1', { opacity: 0, duration: 0.05 }, 0.2);
 
-  // Phase 2: Wireframe transition (25-55%)
-  tl.to(animState, { wireframeProgress: 1, duration: 0.25 }, 0.25)
+  // Phase 2: Terrain wiremesh topology revealed (25-55%)
+  tl.to(animState, { terrainReveal: 1, duration: 0.25 }, 0.25)
     .to(animState, { cameraZ: 10, duration: 0.2 }, 0.25)
     .to(animState, { cameraY: 4, duration: 0.2 }, 0.3);
 
@@ -637,17 +647,69 @@ function setupNav() {
   }
 }
 
+// ===== WAVE HEIGHT FUNCTION (reused by water mesh + boat) =====
+function getWaveHeight(x, z, t) {
+  const windDirX = 0.85, windDirZ = 0.53;
+  const windDot = x * windDirX + z * windDirZ;
+  const crossDot = x * (-windDirZ) + z * windDirX;
+
+  let h = Math.sin(windDot * 0.6 + t * 1.1) * 0.12;
+  h += Math.sin(windDot * 0.9 - t * 0.85) * 0.08;
+  h += Math.sin(windDot * 0.4 + t * 0.6) * 0.06;
+  h += Math.sin(crossDot * 1.1 + t * 1.2) * 0.055;
+  h += Math.sin(crossDot * 1.6 - t * 0.9) * 0.035;
+  h += Math.sin(windDot * 2.2 + crossDot * 0.8 + t * 1.8) * 0.04;
+  h += Math.sin(windDot * 1.7 - crossDot * 1.3 + t * 1.5) * 0.03;
+  h += Math.cos(windDot * 2.8 + crossDot * 1.5 - t * 2.1) * 0.02;
+  h += Math.sin(x * 4.5 + z * 3.2 + t * 3.5) * 0.012;
+  h += Math.cos(x * 5.8 - z * 4.1 - t * 4.0) * 0.008;
+  h += Math.sin(x * 7.0 + z * 6.5 + t * 4.5) * 0.005;
+  h += Math.sin(x * 1.1 + z * 0.7 + t * 0.5) * Math.cos(x * 0.5 - z * 1.2 + t * 0.6) * 0.025;
+  return h;
+}
+
 // ===== UPDATE FUNCTIONS =====
 function updateScene() {
   const t = clock.getElapsedTime();
 
   // In editor mode, skip auto-rotation and camera overrides
   if (!editorMode) {
-    // Boat gentle float
+    // Boat rides the waves — sample wave height at boat center and compute tilt
     if (boatGroup) {
-      boatGroup.rotation.y = animState.boatRotY + Math.sin(t * 0.5) * 0.02;
-      boatGroup.position.y = 0.3 + Math.sin(t * 0.8) * 0.05;
+      // Sample wave at boat origin and nearby points for slope
+      const bx = 0, bz = 0; // boat center in local coords
+      const sampleDist = 1.5; // distance to sample for tilt
+
+      const hCenter = getWaveHeight(bx, bz, t);
+      const hFront  = getWaveHeight(bx + sampleDist, bz, t);
+      const hBack   = getWaveHeight(bx - sampleDist, bz, t);
+      const hLeft   = getWaveHeight(bx, bz - sampleDist, t);
+      const hRight  = getWaveHeight(bx, bz + sampleDist, t);
+
+      // Pitch (nose up/down) from front-to-back slope
+      const pitch = Math.atan2(hFront - hBack, sampleDist * 2) * 0.8;
+      // Roll (side-to-side) from left-to-right slope
+      const roll = Math.atan2(hRight - hLeft, sampleDist * 2) * 0.8;
+
+      // Smooth the boat position/rotation for natural feel
+      const waterSurfaceY = -0.35; // matches waterPlane.position.y
+      const targetY = 0.3 + hCenter + waterSurfaceY * 0.3;
+      boatGroup.position.y += (targetY - boatGroup.position.y) * 0.08;
+
+      // Slow yaw rotation + wave-driven pitch and roll
       animState.boatRotY += 0.001;
+      boatGroup.rotation.y = animState.boatRotY + Math.sin(t * 0.3) * 0.015;
+      boatGroup.rotation.x += (pitch - boatGroup.rotation.x) * 0.06;
+      boatGroup.rotation.z += (roll - boatGroup.rotation.z) * 0.06;
+    }
+
+    // Bass model locked to terrain — mirrors boatGroup rotation/position
+    // so it stays fixed relative to the topographic mesh
+    if (bassModelGroup && boatGroup) {
+      bassModelGroup.rotation.copy(boatGroup.rotation);
+      bassModelGroup.position.x = boatGroup.position.x;
+      bassModelGroup.position.y = boatGroup.position.y - 1.5;
+      bassModelGroup.position.z = boatGroup.position.z;
     }
 
     // Camera
@@ -666,57 +728,63 @@ function updateScene() {
     });
   }
 
-  // Wireframe transition (skip terrain and water objects)
-  const wp = animState.wireframeProgress;
-  const skipNames = ['terrain', 'terrain_edges', 'terrain_contours', 'water_surface'];
-  boatGroup.children.forEach(child => {
-    if (child.isMesh && !screenMeshes.includes(child) && !child.name.startsWith('wire_') && !skipNames.includes(child.name)) {
-      if (child.material && child.material.opacity !== undefined) {
-        child.material.opacity = 1 - wp;
+  // ---- Wind-driven lake water ripples ----
+  if (waterGeo && waterPlane) {
+    const wPos = waterGeo.attributes.position;
+    const baseY = waterGeo.userData.baseY;
+
+    for (let i = 0; i < wPos.count; i++) {
+      const x = wPos.getX(i);
+      const z = wPos.getZ(i);
+
+      // Shared wave height
+      let h = getWaveHeight(x, z, t);
+
+      // Boat wake — water-only effect (concentric + V-wake)
+      const dist = Math.sqrt(x * x + z * z);
+      h += Math.sin(dist * 2.5 - t * 2.8) * 0.035 * Math.exp(-dist * 0.18);
+      if (x < 0) {
+        const wake = Math.exp(-Math.abs(z - x * 0.3) * 2.0) * Math.exp(x * 0.3);
+        h += Math.sin(x * 3.0 - t * 3.0) * 0.045 * wake;
       }
+
+      wPos.setY(i, baseY[i] + h);
     }
-  });
-  wireframeClones.forEach(clone => {
-    clone.material.opacity = wp * 0.7;
-  });
-
-  // Fish
-  const fv = animState.fishVisibility;
-  if (fishGroup) {
-    fishGroup.children.forEach(child => {
-      if (child.material) child.material.opacity = fv * 0.8;
-    });
-    fishBody.material.opacity = fv * 0.6;
-
-    // Scan line
-    if (scanLine) {
-      scanLine.position.x = animState.scanLinePos - 2;
-      scanLine.material.opacity = fv * 0.9;
-    }
-
-    // Fish pulse
-    const pulse = Math.sin(t * 3) * 0.05 + 1;
-    fishGlow.scale.set(pulse, pulse, pulse);
-    fishGlow.material.opacity = fv * 0.15;
+    wPos.needsUpdate = true;
+    waterGeo.computeVertexNormals();
+    // Water opacity follows animState
+    waterPlane.material.opacity = animState.waterOpacity * 0.95;
+    waterPlane.visible = animState.waterOpacity > 0.01;
   }
 
-  // Terrain sonar sweep effect — flickers with screens
+  // Terrain wiremesh topology — revealed after screens disappear and water fades
   if (terrainMesh && terrainMesh.material) {
-    const so = editorMode ? 1 : (1 - animState.screenOpacity); // inverse of screens
+    const tr = animState.terrainReveal;
     const pulse = Math.sin(t * 1.5) * 0.03 + 0.12;
-    terrainMesh.material.opacity = pulse * so;
+    terrainMesh.material.opacity = pulse * tr;
 
     if (terrainEdges) {
-      terrainEdges.material.opacity = pulse * 1.6 * so;
+      terrainEdges.material.opacity = pulse * 1.6 * tr;
     }
     if (terrainContours) {
       terrainContours.children.forEach((child, i) => {
-        child.material.opacity = (0.15 + Math.sin(t * 2 + i * 0.8) * 0.1) * so;
+        child.material.opacity = (0.15 + Math.sin(t * 2 + i * 0.8) * 0.1) * tr;
       });
     }
-    if (waterPlane) {
-      waterPlane.material.opacity = 0.3 * so;
-    }
+  }
+
+  // Low Poly Bass wireframe — revealed during fish phase (Phase 3)
+  const fv = animState.fishVisibility;
+  if (bassModelGroup) {
+    bassModelGroup.visible = fv > 0.01;
+    const bassPulse = Math.sin(t * 2.0) * 0.05 + 0.85;
+    bassModelGroup.children.forEach(child => {
+      if (child.material) {
+        child.material.opacity = bassPulse * fv * 0.85;
+      }
+    });
+
+
   }
 
   // Canvas opacity
