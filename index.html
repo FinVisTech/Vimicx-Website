@@ -367,67 +367,6 @@
   <!-- ===== Editor Toggle Button (always visible) ===== -->
   <button id="editor-toggle-btn" title="Toggle Screen Editor">🖥️ Edit Screens</button>
 
-  <!-- ===== Camera Editor Panel ===== -->
-  <div id="camera-editor" style="display:none;">
-    <div class="editor-header">
-      <span class="editor-title">📷 Camera Editor</span>
-      <button id="camera-close-btn" title="Close camera editor">✕</button>
-    </div>
-
-    <div class="camera-live-row">
-      <label for="camera-live-toggle">
-        <input type="checkbox" id="camera-live-toggle" checked>
-        Live Control (overrides scroll)
-      </label>
-    </div>
-
-    <div class="camera-live-row">
-      <button id="camera-pause-rot-btn" class="camera-action-btn">⏸ Pause Rotation</button>
-    </div>
-
-    <div class="editor-controls" id="camera-controls">
-      <div class="editor-group-label">Position</div>
-      <div class="editor-group">
-        <label>Pos X <span class="editor-val" id="cv-px">0</span></label>
-        <input type="range" id="cam-px" min="-20" max="20" step="0.1" value="0">
-      </div>
-      <div class="editor-group">
-        <label>Pos Y <span class="editor-val" id="cv-py">3</span></label>
-        <input type="range" id="cam-py" min="-5" max="20" step="0.1" value="3">
-      </div>
-      <div class="editor-group">
-        <label>Pos Z <span class="editor-val" id="cv-pz">8</span></label>
-        <input type="range" id="cam-pz" min="-20" max="20" step="0.1" value="8">
-      </div>
-      <hr class="editor-sep">
-      <div class="editor-group-label">Rotation</div>
-      <div class="editor-group">
-        <label>Yaw <span class="editor-val" id="cv-yaw">0°</span></label>
-        <input type="range" id="cam-yaw" min="-180" max="180" step="1" value="0">
-      </div>
-      <div class="editor-group">
-        <label>Pitch <span class="editor-val" id="cv-pitch">-20°</span></label>
-        <input type="range" id="cam-pitch" min="-90" max="90" step="1" value="-20">
-      </div>
-      <hr class="editor-sep">
-      <div class="editor-group-label">Lens</div>
-      <div class="editor-group">
-        <label>FOV <span class="editor-val" id="cv-fov">45°</span></label>
-        <input type="range" id="cam-fov" min="10" max="120" step="1" value="45">
-      </div>
-    </div>
-
-    <div class="editor-export-row">
-      <button id="camera-copy-btn">📋 Copy Coordinates</button>
-    </div>
-    <div class="editor-export-row">
-      <button id="camera-log-btn">📄 Show in Console</button>
-    </div>
-    <pre id="camera-log-output" style="display:none;"></pre>
-  </div>
-
-  <!-- ===== Camera Editor Toggle Button ===== -->
-  <button id="camera-toggle-btn" title="Toggle Camera Editor">📷 Camera</button>
 
   <!-- ===== Scripts ===== -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -438,6 +377,6 @@
   <script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
   <script src="main.js"></script>
   <script src="dev/screen-editor.js"></script>
-  <script src="dev/camera-editor.js"></script>
+
 </body>
 </html>
