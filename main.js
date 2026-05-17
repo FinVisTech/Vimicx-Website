@@ -10,6 +10,9 @@ let wireframeClones = [];
 let fishGroup, fishBody, fishGlow, scanLine;
 let waterPlane, waterGeo;
 let bassModelGroup; // Low poly bass — locked to terrain, NOT riding waves
+
+// Dot-grid masking system — renders dots only where no 3D objects are visible
+let maskRenderTarget;
 let editorMode = false;
 let animState = {
   screenOpacity: 1,
@@ -43,12 +46,13 @@ let clock;
 function init() {
   clock = new THREE.Clock();
 
-  // Renderer
+  // Renderer — opaque background so dot grid plane is visible behind objects
   const canvas = document.getElementById('three-canvas');
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setClearColor(0x000000, 0);
+  renderer.setClearColor(0x1E1E1E, 1);
+  renderer.autoClear = true;
 
   // Scene
   scene = new THREE.Scene();
@@ -58,6 +62,9 @@ function init() {
   camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
   camera.position.set(0, 3, 8);
   camera.lookAt(0, 0.5, 0);
+
+  // ---- Dot-grid masking system ----
+  setupDotGridMask();
 
   // Lights
   const ambient = new THREE.AmbientLight(0x0a4a4a, 0.6);
@@ -76,6 +83,7 @@ function init() {
   scene.add(pointMagenta);
 
   // Build scene
+  buildDotGridPlane(); // background dot grid in 3D scene
   buildBoat(); // screens, wireframe clones, and terrain built inside STL load callback
   buildFish();
   buildParticles();
@@ -490,6 +498,7 @@ function buildWater() {
     }
   });
 
+  terrainContours.visible = false; // disabled — dots look like visual noise
   terrainAnchor.add(terrainContours);
 }
 
@@ -508,6 +517,7 @@ function buildParticles() {
     color: 0x7DFDFE, size: 0.04, transparent: true, opacity: 0.4
   });
   const particles = new THREE.Points(particleGeo, particleMat);
+  particles.name = 'ambient_particles'; // excluded from dot-grid mask
   scene.add(particles);
 }
 
@@ -875,11 +885,7 @@ function updateScene() {
     if (terrainEdges) {
       terrainEdges.material.opacity = pulse * 1.6 * tr;
     }
-    if (terrainContours) {
-      terrainContours.children.forEach((child, i) => {
-        child.material.opacity = (0.15 + Math.sin(t * 2 + i * 0.8) * 0.1) * tr;
-      });
-    }
+    // Contour points disabled — they appear as distracting random blue dots
   }
 
   // Low Poly Bass wireframe — revealed during fish phase (Phase 3)
@@ -912,6 +918,8 @@ function animate() {
   if (orbitControls && editorMode) orbitControls.update();
   updateScene();
   renderer.render(scene, camera);
+  // Overlay the masked dot grid on top
+  renderDotGridOverlay();
 }
 
 // ===== RESIZE =====
@@ -919,6 +927,205 @@ function onResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  // Resize dot grid mask
+  if (maskRenderTarget) {
+    const pr = Math.min(window.devicePixelRatio, 2);
+    maskRenderTarget.setSize(
+      Math.floor(window.innerWidth * pr * 0.5),
+      Math.floor(window.innerHeight * pr * 0.5)
+    );
+  }
+  if (dotGridQuad && dotGridQuad.material.uniforms) {
+    dotGridQuad.material.uniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
+    dotGridQuad.material.uniforms.uMaskRes.value.set(maskRenderTarget.width, maskRenderTarget.height);
+  }
+}
+
+// ===== DOT GRID MASKING SYSTEM =====
+// Renders the dot grid ONLY where 3D objects are NOT visible.
+// Uses a two-pass approach entirely on the GPU:
+//  1. Mask pass: render all scene objects as white silhouettes on black
+//  2. Dot pass: a full-screen shader quad draws dots procedurally,
+//     sampling the mask texture to skip dots where objects are visible.
+// No CPU pixel readback — everything runs on the GPU for maximum performance.
+
+let dotGridScene, dotGridQuad;
+let maskOverrideMat, maskOverrideLineMat, maskOverridePointMat;
+
+function setupDotGridMask() {
+  // Create a low-res render target for the mask
+  const pr = Math.min(window.devicePixelRatio, 2);
+  maskRenderTarget = new THREE.WebGLRenderTarget(
+    Math.floor(window.innerWidth * pr * 0.5),
+    Math.floor(window.innerHeight * pr * 0.5)
+  );
+
+  // Pre-create override materials for the mask pass
+  maskOverrideMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  maskOverrideLineMat = new THREE.LineBasicMaterial({ color: 0xffffff });
+  maskOverridePointMat = new THREE.PointsMaterial({ color: 0xffffff, size: 3 });
+
+  // Create dot grid shader material
+  const dotGridMaterial = new THREE.ShaderMaterial({
+    transparent: true,
+    depthTest: false,
+    depthWrite: false,
+    uniforms: {
+      uMask: { value: maskRenderTarget.texture },
+      uMaskRes: { value: new THREE.Vector2(maskRenderTarget.width, maskRenderTarget.height) },
+      uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+      uSpacing: { value: 40.0 },
+      uDotRadius: { value: 1.2 },
+      uDotColor: { value: new THREE.Vector3(0.357, 0.4, 0.404) }, // #5B6668
+      uOpacity: { value: 1.0 }
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = vec4(position.xy, 0.0, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform sampler2D uMask;
+      uniform vec2 uMaskRes;
+      uniform vec2 uResolution;
+      uniform float uSpacing;
+      uniform float uDotRadius;
+      uniform vec3 uDotColor;
+      uniform float uOpacity;
+      varying vec2 vUv;
+
+      void main() {
+        // Convert UV to pixel coordinates
+        vec2 pixel = vUv * uResolution;
+
+        // Compute distance to nearest dot center
+        vec2 dotCenter = (floor(pixel / uSpacing) + 0.5) * uSpacing;
+        float dist = length(pixel - dotCenter);
+
+        // Smooth dot shape
+        float dot = 1.0 - smoothstep(uDotRadius - 0.5, uDotRadius + 0.5, dist);
+
+        // Sample mask with a small kernel for stable edges.
+        // Average 5 samples (center + 4 neighbors) to smooth out
+        // flickering at object boundaries like the water surface.
+        vec2 texelSize = 1.0 / uMaskRes;
+        float mask = texture2D(uMask, vUv).r;
+        mask += texture2D(uMask, vUv + vec2(texelSize.x * 2.0, 0.0)).r;
+        mask += texture2D(uMask, vUv - vec2(texelSize.x * 2.0, 0.0)).r;
+        mask += texture2D(uMask, vUv + vec2(0.0, texelSize.y * 2.0)).r;
+        mask += texture2D(uMask, vUv - vec2(0.0, texelSize.y * 2.0)).r;
+        mask *= 0.2; // average of 5 samples
+
+        // Wide smoothstep for stable edge transitions
+        float maskFade = 1.0 - smoothstep(0.02, 0.25, mask);
+
+        float alpha = dot * maskFade * uOpacity;
+
+        if (alpha < 0.01) discard;
+        gl_FragColor = vec4(uDotColor, alpha);
+      }
+    `
+  });
+
+  // Create a full-screen quad — uses NDC coordinates directly
+  const quadGeo = new THREE.PlaneGeometry(2, 2);
+  dotGridQuad = new THREE.Mesh(quadGeo, dotGridMaterial);
+  dotGridQuad.frustumCulled = false;
+
+  // Separate scene for the dot grid quad (rendered independently)
+  dotGridScene = new THREE.Scene();
+  dotGridScene.add(dotGridQuad);
+}
+
+
+function renderDotGridOverlay() {
+  if (!maskRenderTarget || !dotGridScene) return;
+
+  // Skip when canvas is faded out (content sections visible)
+  const canvasOp = window.cameraEditorActive ? 1 : animState.canvasOpacity;
+  if (canvasOp < 0.01) return;
+
+  // Update dot grid opacity
+  dotGridQuad.material.uniforms.uOpacity.value = canvasOp;
+
+  // --- MASK PASS: render all scene objects as white silhouettes ---
+  const origFog = scene.fog;
+  scene.fog = null;
+
+  const overrides = [];
+  const hiddenMats = [];
+
+  scene.traverse(function (obj) {
+    if (!obj.visible) return;
+    if (obj === scene) return;
+
+    // Skip elements that should NOT mask the dot grid:
+    // - ambient particles (decorative floating points)
+    // - bass wireframe model (thin lines cause unstable masking)
+    if (obj.name === 'ambient_particles') return;
+    if (obj === bassModelGroup) return;
+    // Skip anything parented under bassModelGroup
+    let skipParent = obj.parent;
+    while (skipParent) {
+      if (skipParent === bassModelGroup) return;
+      skipParent = skipParent.parent;
+    }
+
+    if (obj.material) {
+      const mat = obj.material;
+      const opacity = mat.opacity !== undefined ? mat.opacity : 1;
+      overrides.push({ obj: obj, mat: mat });
+
+      if (opacity > 0.05) {
+        if (obj.isLineSegments || obj.isLine) {
+          obj.material = maskOverrideLineMat;
+        } else if (obj.isPoints) {
+          obj.material = maskOverridePointMat;
+        } else {
+          obj.material = maskOverrideMat;
+        }
+      } else {
+        // Create a temporary invisible material
+        const invisMat = new THREE.MeshBasicMaterial({ visible: false });
+        obj.material = invisMat;
+        hiddenMats.push(invisMat);
+      }
+    }
+  });
+
+  // Render mask to offscreen target
+  const origTarget = renderer.getRenderTarget();
+  renderer.setRenderTarget(maskRenderTarget);
+  renderer.setClearColor(0x000000, 1);
+  renderer.clear();
+  renderer.render(scene, camera);
+
+  // Restore
+  renderer.setRenderTarget(origTarget);
+  renderer.setClearColor(0x1E1E1E, 1);
+
+  overrides.forEach(function (entry) {
+    entry.obj.material = entry.mat;
+  });
+  scene.fog = origFog;
+
+  // Dispose temporary invisible materials
+  hiddenMats.forEach(function (m) { m.dispose(); });
+
+  // --- DOT GRID PASS: render the shader quad using the mask ---
+  // Use a simple orthographic camera for the full-screen quad
+  // (the quad vertex shader outputs NDC directly, so any camera works)
+  renderer.autoClear = false;
+  renderer.render(dotGridScene, camera);
+  renderer.autoClear = true;
+}
+
+// ===== DOT GRID BACKGROUND PLANE (placeholder) =====
+function buildDotGridPlane() {
+  // Dot grid is rendered via the shader-based mask system above.
+  // No in-scene background plane needed.
 }
 
 // ===== LENIS SMOOTH SCROLL =====

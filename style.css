@@ -85,15 +85,20 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
 }
 
 /* ---------- Background Grid ---------- */
-body::before {
+/* Dot grid is now rendered inside the Three.js scene for proper 3D occlusion.
+   A separate CSS dot grid is kept only for the content sections below the 3D canvas. */
+.content-section::before {
   content: '';
-  position: fixed;
+  position: absolute;
   inset: 0;
   background-image:
     radial-gradient(circle at 1px 1px, #5B6668 1px, transparent 0);
   background-size: 40px 40px;
   z-index: 0;
   pointer-events: none;
+}
+.content-section {
+  position: relative;
 }
 
 /* ---------- Navigation ---------- */
