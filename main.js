@@ -17,11 +17,26 @@ let animState = {
   fishVisibility: 0,
   scanLinePos: -2,
   boatRotY: 0,
+  boatRotSpeed: 1,
+  boatAlignToTarget: 0,  // 0 = free spin, 1 = fully aligned to BOAT_TARGET_YAW
+  cameraLockedToBoat: 0,   // 0 = free camera, 1 = camera follows boat transform
+  cameraX: 0,
   cameraY: 3,
   cameraZ: 8,
+  lookAtX: 0,
+  lookAtY: 0.3,
+  lookAtZ: 0,
   canvasOpacity: 1,
   waterOpacity: 1
 };
+
+// Boat-local camera offsets — these define WHERE on the boat the camera sits
+// and WHERE it looks, in the boat's own coordinate frame.
+// Derived from world pos (0.4, 3.9, 0.1) and lookAt (8.21, -1.98, 2.19)
+// when boat was at origin with boatGroup.position.y ≈ 0.3 and rotation 0.
+const CAM_LOCAL_POS    = new THREE.Vector3(0.4, 3.6, 0.1);
+const CAM_LOCAL_LOOKAT = new THREE.Vector3(8.21, -2.28, 2.19);
+const BOAT_TARGET_YAW  = 0; // target yaw angle for the cinematic camera shot
 let clock;
 
 // ===== INIT =====
@@ -37,7 +52,7 @@ function init() {
 
   // Scene
   scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x060612, 0.04);
+  scene.fog = new THREE.FogExp2(0x1E1E1E, 0.018);
 
   // Camera
   camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
@@ -45,18 +60,18 @@ function init() {
   camera.lookAt(0, 0.5, 0);
 
   // Lights
-  const ambient = new THREE.AmbientLight(0x223344, 0.6);
+  const ambient = new THREE.AmbientLight(0x0a4a4a, 0.6);
   scene.add(ambient);
 
-  const dirLight = new THREE.DirectionalLight(0x88aacc, 0.8);
+  const dirLight = new THREE.DirectionalLight(0x5ac8c8, 0.8);
   dirLight.position.set(5, 8, 5);
   scene.add(dirLight);
 
-  const pointCyan = new THREE.PointLight(0x00f0ff, 1.5, 20);
+  const pointCyan = new THREE.PointLight(0x0C9AA1, 1.5, 20);
   pointCyan.position.set(-3, 4, 2);
   scene.add(pointCyan);
 
-  const pointMagenta = new THREE.PointLight(0xff00aa, 0.8, 15);
+  const pointMagenta = new THREE.PointLight(0x7DFDFE, 0.8, 15);
   pointMagenta.position.set(3, 2, -2);
   scene.add(pointMagenta);
 
@@ -130,8 +145,8 @@ function buildBoat() {
 
     // Main boat mesh
     const boatMat = new THREE.MeshPhongMaterial({
-      color: 0x1a1a2e,
-      specular: 0x333366,
+      color: 0x053030,
+      specular: 0x0C9AA1,
       shininess: 60,
       transparent: true,
       opacity: 1,
@@ -159,7 +174,7 @@ function buildBoat() {
     // Fallback: build a simple placeholder boat
     const fallbackGeo = new THREE.BoxGeometry(2, 0.5, 5);
     const fallbackMat = new THREE.MeshPhongMaterial({
-      color: 0x1a1a2e, specular: 0x333366, shininess: 60,
+      color: 0x053030, specular: 0x0C9AA1, shininess: 60,
       transparent: true, opacity: 1
     });
     const fallback = new THREE.Mesh(fallbackGeo, fallbackMat);
@@ -189,17 +204,17 @@ function buildScreens() {
   const screenDefs = [
     // --- BOW / CONSOLE SCREENS (3 screens at the helm) ---
     // Screen 1: Main center console (large, primary display)
-    { w: 0.55, h: 0.4,  pos: [2.11, 0.41, -0.05], rot: [-0.297, 1.571, 0.244], color: 0x00f0ff },
+    { w: 0.55, h: 0.4,  pos: [2.11, 0.41, -0.05], rot: [-0.297, 1.571, 0.244], color: 0x0C9AA1 },
     // Screen 2: Right console screen (angled inward)
-    { w: 0.35, h: 0.28, pos: [1.85, 0.33, 0.27],  rot: [-0.122, 1.222, 0],     color: 0x00ff88 },
+    { w: 0.35, h: 0.28, pos: [1.85, 0.33, 0.27],  rot: [-0.122, 1.222, 0],     color: 0x7DFDFE },
     // Screen 3: Upper console screen
-    { w: 0.35, h: 0.28, pos: [2.24, 0.65, -0.02], rot: [0, 1.606, 0],          color: 0x00f0ff },
+    { w: 0.35, h: 0.28, pos: [2.24, 0.65, -0.02], rot: [0, 1.606, 0],          color: 0x0C9AA1 },
 
     // --- SEAT SCREENS (1 in front of each seat) ---
     // Screen 4: Right seat screen
-    { w: 0.3,  h: 0.22, pos: [-0.09, 0.53, 0.56],  rot: [-0.454, 1.553, 0.489], color: 0x8b5cf6 },
+    { w: 0.3,  h: 0.22, pos: [-0.09, 0.53, 0.56],  rot: [-0.454, 1.553, 0.489], color: 0x7DFDFE },
     // Screen 5: Left seat screen
-    { w: 0.3,  h: 0.22, pos: [-0.09, 0.37, -0.50], rot: [0.035, 1.571, 0],      color: 0x00ff88 },
+    { w: 0.3,  h: 0.22, pos: [-0.09, 0.37, -0.50], rot: [0.035, 1.571, 0],      color: 0x0C9AA1 },
   ];
 
   screenDefs.forEach((def, i) => {
@@ -342,7 +357,7 @@ function buildFish() {
     wireGeo.setAttribute('position', new THREE.Float32BufferAttribute(edgePoints, 3));
 
     const wireMat = new THREE.LineBasicMaterial({
-      color: 0xff4500,
+      color: 0x0C9AA1,
       transparent: true,
       opacity: 0
     });
@@ -360,13 +375,16 @@ function buildFish() {
 
 // ===== UNDERWATER TERRAIN TOPOLOGY =====
 let terrainMesh, terrainEdges, terrainContours;
+let terrainAnchor; // follows boat yaw only (no wave bob, no pitch/roll)
 
 function buildWater() {
-  const sizeX = 14, sizeZ = 10;
+  // Water uses original dimensions; terrain is expanded separately
+  const waterSizeX = 14, waterSizeZ = 10;
+  const sizeX = 42, sizeZ = 30;
 
   // ---- LAYER 1: Opaque animated water surface (visible at start) ----
   const waterSegW = 100, waterSegH = 100;
-  waterGeo = new THREE.PlaneGeometry(sizeX, sizeZ, waterSegW, waterSegH);
+  waterGeo = new THREE.PlaneGeometry(waterSizeX, waterSizeZ, waterSegW, waterSegH);
   waterGeo.rotateX(-Math.PI / 2);
 
   // Store original Y positions for ripple animation
@@ -377,8 +395,8 @@ function buildWater() {
   }
 
   const waterMat = new THREE.MeshPhongMaterial({
-    color: 0x041830,
-    specular: 0x0088aa,
+    color: 0x1E1E1E,
+    specular: 0x0C9AA1,
     shininess: 90,
     transparent: true,
     opacity: 0.95,
@@ -386,13 +404,13 @@ function buildWater() {
     flatShading: false
   });
   waterPlane = new THREE.Mesh(waterGeo, waterMat);
-  waterPlane.position.y = -0.35;
+  waterPlane.position.y = -0.35 - 0.3; // offset to compensate for boatGroup.position.y
   waterPlane.name = 'water_surface';
   waterPlane.receiveShadow = true;
-  boatGroup.add(waterPlane);
+  boatGroup.add(waterPlane); // water moves with the boat
 
   // ---- LAYER 2: Terrain wiremesh topology (hidden initially, revealed on scroll) ----
-  const segW = 80, segH = 80;
+  const segW = 120, segH = 120;
   const terrainGeo = new THREE.PlaneGeometry(sizeX, sizeZ * 0.8, segW, segH);
   terrainGeo.rotateX(-Math.PI / 2);
 
@@ -419,33 +437,38 @@ function buildWater() {
   pos.needsUpdate = true;
   terrainGeo.computeVertexNormals();
 
+  // Create an anchor group that follows the boat's yaw but NOT its wave motion
+  terrainAnchor = new THREE.Group();
+  terrainAnchor.position.y = 0; // stays at fixed height
+  scene.add(terrainAnchor);
+
   const terrainMat = new THREE.MeshBasicMaterial({
-    color: 0x00f0ff, wireframe: true, transparent: true, opacity: 0
+    color: 0x0C9AA1, wireframe: true, transparent: true, opacity: 0
   });
   terrainMesh = new THREE.Mesh(terrainGeo, terrainMat);
   terrainMesh.position.y = -1.8;
   terrainMesh.name = 'terrain';
-  boatGroup.add(terrainMesh);
+  terrainAnchor.add(terrainMesh);
 
   const edgeGeo = new THREE.EdgesGeometry(terrainGeo, 12);
   const edgeMat = new THREE.LineBasicMaterial({
-    color: 0x00f0ff, transparent: true, opacity: 0
+    color: 0x7DFDFE, transparent: true, opacity: 0
   });
   terrainEdges = new THREE.LineSegments(edgeGeo, edgeMat);
   terrainEdges.position.copy(terrainMesh.position);
   terrainEdges.name = 'terrain_edges';
-  boatGroup.add(terrainEdges);
+  terrainAnchor.add(terrainEdges);
 
   terrainContours = new THREE.Group();
   terrainContours.position.copy(terrainMesh.position);
   terrainContours.name = 'terrain_contours';
 
   const contourLevels = [-0.8, -0.4, 0.0, 0.3, 0.6];
-  const contourColors = [0x003344, 0x005566, 0x007788, 0x00aacc, 0x00f0ff];
+  const contourColors = [0x032828, 0x053a3a, 0x0C9AA1, 0x4dcbcf, 0x7DFDFE];
 
   contourLevels.forEach((level, ci) => {
     const points = [];
-    const step = 0.15;
+    const step = 0.3;
     for (let x = -sizeX / 2; x < sizeX / 2; x += step) {
       for (let z = -sizeZ / 2 * 0.8; z < sizeZ / 2 * 0.8; z += step) {
         const h = terrainHeight(x, z);
@@ -467,7 +490,7 @@ function buildWater() {
     }
   });
 
-  boatGroup.add(terrainContours);
+  terrainAnchor.add(terrainContours);
 }
 
 // ===== PARTICLES =====
@@ -482,7 +505,7 @@ function buildParticles() {
   const particleGeo = new THREE.BufferGeometry();
   particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   const particleMat = new THREE.PointsMaterial({
-    color: 0x00f0ff, size: 0.04, transparent: true, opacity: 0.4
+    color: 0x7DFDFE, size: 0.04, transparent: true, opacity: 0.4
   });
   const particles = new THREE.Points(particleGeo, particleMat);
   scene.add(particles);
@@ -497,7 +520,7 @@ function drawAboutCanvas() {
 
   function draw() {
     ctx.clearRect(0, 0, 500, 400);
-    ctx.strokeStyle = 'rgba(0,240,255,0.12)';
+    ctx.strokeStyle = 'rgba(12, 154, 161, 0.15)';
     ctx.lineWidth = 1;
     const t = Date.now() * 0.001;
     for (let x = 0; x < 500; x += 20) {
@@ -560,44 +583,52 @@ function setupScrollAnimations() {
     scrollTrigger: {
       trigger: '#transformation',
       start: 'top top',
-      end: '+=3500',
+      end: '+=4500',
       scrub: 1,
       pin: true,
       anticipatePin: 1
     }
   });
 
-  // Phase 1: Screens AND water flicker and fade together (0-25%)
-  tl.to(animState, { screenOpacity: 0.3, waterOpacity: 0.4, duration: 0.05 })
-    .to(animState, { screenOpacity: 0.8, waterOpacity: 0.9, duration: 0.02 })
-    .to(animState, { screenOpacity: 0.1, waterOpacity: 0.15, duration: 0.03 })
-    .to(animState, { screenOpacity: 0.6, waterOpacity: 0.7, duration: 0.02 })
-    .to(animState, { screenOpacity: 0, waterOpacity: 0, duration: 0.08 });
+  // Phase 1: Screens AND water flicker and fade together (0-20%)
+  tl.to(animState, { screenOpacity: 0.3, waterOpacity: 0.4, duration: 0.04 })
+    .to(animState, { screenOpacity: 0.8, waterOpacity: 0.9, duration: 0.015 })
+    .to(animState, { screenOpacity: 0.1, waterOpacity: 0.15, duration: 0.025 })
+    .to(animState, { screenOpacity: 0.6, waterOpacity: 0.7, duration: 0.015 })
+    .to(animState, { screenOpacity: 0, waterOpacity: 0, duration: 0.065 });
 
   // Show problem text
-  tl.to('#t-text-1', { opacity: 1, duration: 0.08 }, 0.05)
-    .to('#t-text-1', { opacity: 0, duration: 0.05 }, 0.2);
+  tl.to('#t-text-1', { opacity: 1, duration: 0.06 }, 0.04)
+    .to('#t-text-1', { opacity: 0, duration: 0.04 }, 0.16);
 
-  // Phase 2: Terrain wiremesh topology revealed (25-55%)
-  tl.to(animState, { terrainReveal: 1, duration: 0.25 }, 0.25)
-    .to(animState, { cameraZ: 10, duration: 0.2 }, 0.25)
-    .to(animState, { cameraY: 4, duration: 0.2 }, 0.3);
+  // Phase 2: Terrain wiremesh topology revealed (20-60%) — extended dwell time
+  tl.to(animState, { terrainReveal: 1, duration: 0.20 }, 0.20)
+    .to(animState, { cameraZ: 10, duration: 0.15 }, 0.20)
+    .to(animState, { cameraY: 4, duration: 0.15 }, 0.25);
 
   // Show solution text
-  tl.to('#t-text-2', { opacity: 1, duration: 0.08 }, 0.3)
-    .to('#t-text-2', { opacity: 0, duration: 0.05 }, 0.5);
+  tl.to('#t-text-2', { opacity: 1, duration: 0.06 }, 0.25)
+    .to('#t-text-2', { opacity: 0, duration: 0.04 }, 0.42);
 
-  // Phase 3: Fish reveal (55-80%)
-  tl.to(animState, { fishVisibility: 1, duration: 0.2 }, 0.55)
-    .to(animState, { cameraY: 2, duration: 0.15 }, 0.6)
-    .to(animState, { scanLinePos: 3, duration: 0.15 }, 0.65);
+  // Slow the boat spin and begin smooth alignment to cinematic angle
+  tl.to(animState, { boatRotSpeed: 0, duration: 0.10, ease: 'power2.out' }, 0.28);
+  // Smoothly steer the boat toward BOAT_TARGET_YAW (shortest arc, handled in updateScene)
+  tl.to(animState, { boatAlignToTarget: 1, duration: 0.18, ease: 'power3.inOut' }, 0.30);
 
-  // Show fish text
-  tl.to('#t-text-3', { opacity: 1, duration: 0.08 }, 0.6)
-    .to('#t-text-3', { opacity: 0, duration: 0.08 }, 0.85);
+  // Lock camera to boat — starts after alignment is well underway
+  tl.to(animState, { cameraLockedToBoat: 1, duration: 0.15, ease: 'power2.inOut' }, 0.44);
 
-  // Phase 4: Fade out canvas (85-100%)
-  tl.to(animState, { canvasOpacity: 0, duration: 0.15 }, 0.85);
+  // Phase 3: Fish reveal (68-88%) — pushed later for more wireframe viewing time
+  tl.to(animState, { fishVisibility: 1, duration: 0.15 }, 0.68)
+    .to(animState, { cameraY: 2, duration: 0.12 }, 0.72)
+    .to(animState, { scanLinePos: 3, duration: 0.12 }, 0.74);
+
+  // Show fish text ("See what others can't")
+  tl.to('#t-text-3', { opacity: 1, duration: 0.06 }, 0.72)
+    .to('#t-text-3', { opacity: 0, duration: 0.06 }, 0.88);
+
+  // Phase 4: Fade out canvas (90-100%)
+  tl.to(animState, { canvasOpacity: 0, duration: 0.10 }, 0.90);
 
   // ===== CONTENT SECTION CANVAS FADE =====
   ScrollTrigger.create({
@@ -674,8 +705,8 @@ function updateScene() {
 
   // In editor mode, skip auto-rotation and camera overrides
   if (!editorMode) {
-    // Boat rides the waves — sample wave height at boat center and compute tilt
-    if (boatGroup) {
+    // Boat rides the waves — freeze ALL motion when camera editor is active
+    if (boatGroup && !window.cameraEditorActive) {
       // Sample wave at boat origin and nearby points for slope
       const bx = 0, bz = 0; // boat center in local coords
       const sampleDist = 1.5; // distance to sample for tilt
@@ -697,25 +728,96 @@ function updateScene() {
       boatGroup.position.y += (targetY - boatGroup.position.y) * 0.08;
 
       // Slow yaw rotation + wave-driven pitch and roll
-      animState.boatRotY += 0.001;
-      boatGroup.rotation.y = animState.boatRotY + Math.sin(t * 0.3) * 0.015;
+      if (!window.rotationPaused) {
+        animState.boatRotY += 0.001 * animState.boatRotSpeed;
+      }
+
+      // Smooth shortest-path alignment toward cinematic target yaw
+      // Buffer the scroll-driven value through a per-frame lerp to kill jitter
+      if (!updateScene._smoothAlign) updateScene._smoothAlign = 0;
+      updateScene._smoothAlign += (animState.boatAlignToTarget - updateScene._smoothAlign) * 0.05;
+      const align = updateScene._smoothAlign;
+
+      if (align > 0.001) {
+        // Normalize current yaw into [-PI, PI] range
+        let current = animState.boatRotY % (Math.PI * 2);
+        if (current > Math.PI) current -= Math.PI * 2;
+        if (current < -Math.PI) current += Math.PI * 2;
+
+        // Find shortest delta to target
+        let delta = BOAT_TARGET_YAW - current;
+        if (delta > Math.PI) delta -= Math.PI * 2;
+        if (delta < -Math.PI) delta += Math.PI * 2;
+
+        // Steer toward target — blend strength increases with smoothed align factor
+        animState.boatRotY += delta * align * 0.04;
+      }
+
+      boatGroup.rotation.y = animState.boatRotY + Math.sin(t * 0.3) * 0.015 * animState.boatRotSpeed;
       boatGroup.rotation.x += (pitch - boatGroup.rotation.x) * 0.06;
       boatGroup.rotation.z += (roll - boatGroup.rotation.z) * 0.06;
     }
 
-    // Bass model locked to terrain — mirrors boatGroup rotation/position
-    // so it stays fixed relative to the topographic mesh
-    if (bassModelGroup && boatGroup) {
-      bassModelGroup.rotation.copy(boatGroup.rotation);
-      bassModelGroup.position.x = boatGroup.position.x;
-      bassModelGroup.position.y = boatGroup.position.y - 1.5;
-      bassModelGroup.position.z = boatGroup.position.z;
+    // Bass model is independent in the scene — stays fixed, doesn't bob
+    // (position set once during load, no per-frame updates needed)
+
+    // Sync terrain anchor to boat's yaw only (no pitch, roll, or Y bobbing)
+    if (terrainAnchor && boatGroup) {
+      terrainAnchor.rotation.y = boatGroup.rotation.y;
     }
 
-    // Camera
-    camera.position.y += (animState.cameraY - camera.position.y) * 0.05;
-    camera.position.z += (animState.cameraZ - camera.position.z) * 0.05;
-    camera.lookAt(0, 0.3, 0);
+    // Camera (skip when camera editor has live control)
+    if (!window.cameraEditorActive) {
+      // Smooth the lock factor through a per-frame lerp to decouple from scroll jitter
+      if (!updateScene._smoothLockCam) updateScene._smoothLockCam = 0;
+      updateScene._smoothLockCam += (animState.cameraLockedToBoat - updateScene._smoothLockCam) * 0.045;
+      const lockCam = updateScene._smoothLockCam;
+
+      // Smoothed lookAt target (persists across frames to prevent snap)
+      if (!updateScene._smoothLookAt) {
+        updateScene._smoothLookAt = new THREE.Vector3(animState.lookAtX, animState.lookAtY, animState.lookAtZ);
+      }
+
+      if (lockCam > 0.001 && boatGroup) {
+        // Compute world-space targets from boat-local offsets
+        boatGroup.updateMatrixWorld();
+        const worldCamPos  = CAM_LOCAL_POS.clone().applyMatrix4(boatGroup.matrixWorld);
+        const worldLookAt  = CAM_LOCAL_LOOKAT.clone().applyMatrix4(boatGroup.matrixWorld);
+
+        // Blend between free camera (animState values) and boat-locked camera
+        const freeX = animState.cameraX, freeY = animState.cameraY, freeZ = animState.cameraZ;
+        const targetX = freeX * (1 - lockCam) + worldCamPos.x * lockCam;
+        const targetY = freeY * (1 - lockCam) + worldCamPos.y * lockCam;
+        const targetZ = freeZ * (1 - lockCam) + worldCamPos.z * lockCam;
+
+        // Smooth camera position blend
+        const camLerp = 0.04;
+        camera.position.x += (targetX - camera.position.x) * camLerp;
+        camera.position.y += (targetY - camera.position.y) * camLerp;
+        camera.position.z += (targetZ - camera.position.z) * camLerp;
+
+        // Smooth lookAt blend — lerp the target point each frame instead of snapping
+        const freeLX = animState.lookAtX, freeLY = animState.lookAtY, freeLZ = animState.lookAtZ;
+        const rawLookX = freeLX * (1 - lockCam) + worldLookAt.x * lockCam;
+        const rawLookY = freeLY * (1 - lockCam) + worldLookAt.y * lockCam;
+        const rawLookZ = freeLZ * (1 - lockCam) + worldLookAt.z * lockCam;
+
+        updateScene._smoothLookAt.x += (rawLookX - updateScene._smoothLookAt.x) * 0.04;
+        updateScene._smoothLookAt.y += (rawLookY - updateScene._smoothLookAt.y) * 0.04;
+        updateScene._smoothLookAt.z += (rawLookZ - updateScene._smoothLookAt.z) * 0.04;
+        camera.lookAt(updateScene._smoothLookAt);
+      } else {
+        camera.position.x += (animState.cameraX - camera.position.x) * 0.05;
+        camera.position.y += (animState.cameraY - camera.position.y) * 0.05;
+        camera.position.z += (animState.cameraZ - camera.position.z) * 0.05;
+
+        // Also smooth lookAt in free mode
+        updateScene._smoothLookAt.x += (animState.lookAtX - updateScene._smoothLookAt.x) * 0.06;
+        updateScene._smoothLookAt.y += (animState.lookAtY - updateScene._smoothLookAt.y) * 0.06;
+        updateScene._smoothLookAt.z += (animState.lookAtZ - updateScene._smoothLookAt.z) * 0.06;
+        camera.lookAt(updateScene._smoothLookAt);
+      }
+    }
   }
 
   // Screen opacity (skip in editor — screens always full visible)
@@ -728,8 +830,8 @@ function updateScene() {
     });
   }
 
-  // ---- Wind-driven lake water ripples ----
-  if (waterGeo && waterPlane) {
+  // ---- Wind-driven lake water ripples (freeze when camera editor active) ----
+  if (waterGeo && waterPlane && !window.cameraEditorActive) {
     const wPos = waterGeo.attributes.position;
     const baseY = waterGeo.userData.baseY;
 
@@ -758,13 +860,18 @@ function updateScene() {
   }
 
   // Terrain wiremesh topology — revealed after screens disappear and water fades
+  // Hide entirely until terrainReveal kicks in to prevent z-fighting with water
+  if (terrainAnchor) {
+    const tr = animState.terrainReveal;
+    terrainAnchor.visible = tr > 0.01;
+  }
   if (terrainMesh && terrainMesh.material) {
     const tr = animState.terrainReveal;
     const pulse = Math.sin(t * 1.5) * 0.03 + 0.12;
     terrainMesh.material.opacity = pulse * tr;
 
     if (terrainEdges) {
-      terrainEdges.material.opacity = pulse * 1.6 * tr;
+      terrainEdges.material.opacity = pulse * 1.6 * tr;  
     }
     if (terrainContours) {
       terrainContours.children.forEach((child, i) => {
@@ -787,8 +894,8 @@ function updateScene() {
 
   }
 
-  // Canvas opacity
-  renderer.domElement.style.opacity = animState.canvasOpacity;
+  // Canvas opacity (force full opacity when camera editor is active)
+  renderer.domElement.style.opacity = window.cameraEditorActive ? 1 : animState.canvasOpacity;
 }
 
 // ===== RENDER LOOP =====

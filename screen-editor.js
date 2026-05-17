@@ -219,7 +219,7 @@
     if (!boatGroup) return;
 
     const w = 0.4, h = 0.3;
-    const color = 0x00f0ff;
+    const color = 0x0C9AA1;
 
     const geo = new THREE.PlaneGeometry(w, h);
     const mat = new THREE.MeshBasicMaterial({
