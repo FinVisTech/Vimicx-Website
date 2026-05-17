@@ -32,6 +32,7 @@
     pz:    document.getElementById('cam-pz'),
     yaw:   document.getElementById('cam-yaw'),
     pitch: document.getElementById('cam-pitch'),
+    fov:   document.getElementById('cam-fov'),
   };
 
   // Value displays
@@ -41,6 +42,7 @@
     pz:    document.getElementById('cv-pz'),
     yaw:   document.getElementById('cv-yaw'),
     pitch: document.getElementById('cv-pitch'),
+    fov:   document.getElementById('cv-fov'),
   };
 
   // ===== Compute lookAt point from position + yaw/pitch =====
@@ -78,6 +80,7 @@
     const euler = camera.rotation;
     sl.pitch.value = Math.round(euler.x * RAD2DEG);
     sl.yaw.value   = Math.round(euler.y * RAD2DEG);
+    sl.fov.value   = Math.round(camera.fov);
 
     updateDisplays();
   }
@@ -89,6 +92,7 @@
     vl.pz.textContent    = parseFloat(sl.pz.value).toFixed(1);
     vl.yaw.textContent   = sl.yaw.value + '°';
     vl.pitch.textContent = sl.pitch.value + '°';
+    vl.fov.textContent   = sl.fov.value + '°';
   }
 
   // ===== Apply sliders to camera =====
@@ -106,6 +110,13 @@
     const yawRad   = parseFloat(sl.yaw.value) * DEG2RAD;
     const pitchRad = parseFloat(sl.pitch.value) * DEG2RAD;
     camera.rotation.set(pitchRad, yawRad, 0, 'YXZ');
+
+    // FOV
+    const newFov = parseFloat(sl.fov.value);
+    if (Math.abs(camera.fov - newFov) > 0.01) {
+      camera.fov = newFov;
+      camera.updateProjectionMatrix();
+    }
 
     updateDisplays();
   }
@@ -131,6 +142,7 @@
       },
       _jsSnippet:
         `camera.position.set(${parseFloat(sl.px.value).toFixed(1)}, ${parseFloat(sl.py.value).toFixed(1)}, ${parseFloat(sl.pz.value).toFixed(1)});\n` +
+        `camera.fov = ${sl.fov.value}; camera.updateProjectionMatrix();\n` +
         `camera.lookAt(${lookAt.x.toFixed(2)}, ${lookAt.y.toFixed(2)}, ${lookAt.z.toFixed(2)});`
     };
     return JSON.stringify(data, null, 2);
@@ -201,6 +213,13 @@
         const yawRad   = parseFloat(sl.yaw.value) * DEG2RAD;
         const pitchRad = parseFloat(sl.pitch.value) * DEG2RAD;
         camera.rotation.set(pitchRad, yawRad, 0, 'YXZ');
+
+        // FOV
+        const newFov = parseFloat(sl.fov.value);
+        if (Math.abs(camera.fov - newFov) > 0.01) {
+          camera.fov = newFov;
+          camera.updateProjectionMatrix();
+        }
       } else {
         // Read-only: show current camera values
         sl.px.value = camera.position.x.toFixed(1);
@@ -208,6 +227,7 @@
         sl.pz.value = camera.position.z.toFixed(1);
         sl.pitch.value = Math.round(camera.rotation.x * RAD2DEG);
         sl.yaw.value   = Math.round(camera.rotation.y * RAD2DEG);
+        sl.fov.value   = Math.round(camera.fov);
         updateDisplays();
       }
     }

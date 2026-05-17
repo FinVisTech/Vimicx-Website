@@ -27,16 +27,16 @@ let animState = {
   lookAtY: 0.3,
   lookAtZ: 0,
   canvasOpacity: 1,
-  waterOpacity: 1
+  waterOpacity: 1,
+  fov: 50
 };
 
 // Boat-local camera offsets — these define WHERE on the boat the camera sits
 // and WHERE it looks, in the boat's own coordinate frame.
-// Derived from world pos (0.4, 3.9, 0.1) and lookAt (8.21, -1.98, 2.19)
-// when boat was at origin with boatGroup.position.y ≈ 0.3 and rotation 0.
-const CAM_LOCAL_POS    = new THREE.Vector3(0.4, 3.6, 0.1);
-const CAM_LOCAL_LOOKAT = new THREE.Vector3(8.21, -2.28, 2.19);
-const BOAT_TARGET_YAW  = 0; // target yaw angle for the cinematic camera shot
+// Derived from exported Vimicx Camera Coordinates (yaw 90°, pitch -45°).
+const CAM_LOCAL_POS = new THREE.Vector3(1.7, 2.1, 0.0);
+const CAM_LOCAL_LOOKAT = new THREE.Vector3(8.77, -4.97, 0.0);
+const BOAT_TARGET_YAW = 0; // target yaw angle for the cinematic camera shot
 let clock;
 
 // ===== INIT =====
@@ -55,7 +55,7 @@ function init() {
   scene.fog = new THREE.FogExp2(0x1E1E1E, 0.018);
 
   // Camera
-  camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+  camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
   camera.position.set(0, 3, 8);
   camera.lookAt(0, 0.5, 0);
 
@@ -164,28 +164,28 @@ function buildBoat() {
     buildWater(); // terrain topology below the hull
     boatLoaded = true;
   },
-  // Progress callback
-  function (xhr) {
-    console.log('Boat STL: ' + (xhr.loaded / xhr.total * 100).toFixed(0) + '% loaded');
-  },
-  // Error callback
-  function (error) {
-    console.error('Error loading boat STL:', error);
-    // Fallback: build a simple placeholder boat
-    const fallbackGeo = new THREE.BoxGeometry(2, 0.5, 5);
-    const fallbackMat = new THREE.MeshPhongMaterial({
-      color: 0x053030, specular: 0x0C9AA1, shininess: 60,
-      transparent: true, opacity: 1
-    });
-    const fallback = new THREE.Mesh(fallbackGeo, fallbackMat);
-    fallback.name = 'hull';
-    boatGroup.add(fallback);
+    // Progress callback
+    function (xhr) {
+      console.log('Boat STL: ' + (xhr.loaded / xhr.total * 100).toFixed(0) + '% loaded');
+    },
+    // Error callback
+    function (error) {
+      console.error('Error loading boat STL:', error);
+      // Fallback: build a simple placeholder boat
+      const fallbackGeo = new THREE.BoxGeometry(2, 0.5, 5);
+      const fallbackMat = new THREE.MeshPhongMaterial({
+        color: 0x053030, specular: 0x0C9AA1, shininess: 60,
+        transparent: true, opacity: 1
+      });
+      const fallback = new THREE.Mesh(fallbackGeo, fallbackMat);
+      fallback.name = 'hull';
+      boatGroup.add(fallback);
 
-    buildScreens();
-    buildWireframeClones();
-    buildWater();
-    boatLoaded = true;
-  });
+      buildScreens();
+      buildWireframeClones();
+      buildWater();
+      boatLoaded = true;
+    });
 }
 
 // ===== SCREENS =====
@@ -204,17 +204,17 @@ function buildScreens() {
   const screenDefs = [
     // --- BOW / CONSOLE SCREENS (3 screens at the helm) ---
     // Screen 1: Main center console (large, primary display)
-    { w: 0.55, h: 0.4,  pos: [2.11, 0.41, -0.05], rot: [-0.297, 1.571, 0.244], color: 0x0C9AA1 },
+    { w: 0.55, h: 0.4, pos: [2.11, 0.41, -0.05], rot: [-0.297, 1.571, 0.244], color: 0x0C9AA1 },
     // Screen 2: Right console screen (angled inward)
-    { w: 0.35, h: 0.28, pos: [1.85, 0.33, 0.27],  rot: [-0.122, 1.222, 0],     color: 0x7DFDFE },
+    { w: 0.35, h: 0.28, pos: [1.85, 0.33, 0.27], rot: [-0.122, 1.222, 0], color: 0x7DFDFE },
     // Screen 3: Upper console screen
-    { w: 0.35, h: 0.28, pos: [2.24, 0.65, -0.02], rot: [0, 1.606, 0],          color: 0x0C9AA1 },
+    { w: 0.35, h: 0.28, pos: [2.24, 0.65, -0.02], rot: [0, 1.606, 0], color: 0x0C9AA1 },
 
     // --- SEAT SCREENS (1 in front of each seat) ---
     // Screen 4: Right seat screen
-    { w: 0.3,  h: 0.22, pos: [-0.09, 0.53, 0.56],  rot: [-0.454, 1.553, 0.489], color: 0x7DFDFE },
+    { w: 0.3, h: 0.22, pos: [-0.09, 0.53, 0.56], rot: [-0.454, 1.553, 0.489], color: 0x7DFDFE },
     // Screen 5: Left seat screen
-    { w: 0.3,  h: 0.22, pos: [-0.09, 0.37, -0.50], rot: [0.035, 1.571, 0],      color: 0x0C9AA1 },
+    { w: 0.3, h: 0.22, pos: [-0.09, 0.37, -0.50], rot: [0.035, 1.571, 0], color: 0x0C9AA1 },
   ];
 
   screenDefs.forEach((def, i) => {
@@ -365,12 +365,12 @@ function buildFish() {
     wireLines.name = 'bass_wireframe';
     bassModelGroup.add(wireLines);
   },
-  function (xhr) {
-    console.log('LowPolyBass STL: ' + (xhr.loaded / xhr.total * 100).toFixed(0) + '% loaded');
-  },
-  function (error) {
-    console.error('Error loading LowPolyBass STL:', error);
-  });
+    function (xhr) {
+      console.log('LowPolyBass STL: ' + (xhr.loaded / xhr.total * 100).toFixed(0) + '% loaded');
+    },
+    function (error) {
+      console.error('Error loading LowPolyBass STL:', error);
+    });
 }
 
 // ===== UNDERWATER TERRAIN TOPOLOGY =====
@@ -603,8 +603,10 @@ function setupScrollAnimations() {
 
   // Phase 2: Terrain wiremesh topology revealed (20-60%) — extended dwell time
   tl.to(animState, { terrainReveal: 1, duration: 0.20 }, 0.20)
-    .to(animState, { cameraZ: 10, duration: 0.15 }, 0.20)
-    .to(animState, { cameraY: 4, duration: 0.15 }, 0.25);
+    .to(animState, { cameraX: 1.7, cameraZ: 0, duration: 0.15 }, 0.20)
+    .to(animState, { cameraY: 2.4, duration: 0.15 }, 0.25)
+    .to(animState, { lookAtX: 8.77, lookAtY: -4.67, lookAtZ: 0, duration: 0.15 }, 0.20)
+    .to(animState, { fov: 70, duration: 0.15, ease: 'power2.inOut' }, 0.20);
 
   // Show solution text
   tl.to('#t-text-2', { opacity: 1, duration: 0.06 }, 0.25)
@@ -620,7 +622,7 @@ function setupScrollAnimations() {
 
   // Phase 3: Fish reveal (68-88%) — pushed later for more wireframe viewing time
   tl.to(animState, { fishVisibility: 1, duration: 0.15 }, 0.68)
-    .to(animState, { cameraY: 2, duration: 0.12 }, 0.72)
+    .to(animState, { cameraY: 2.4, duration: 0.12 }, 0.72)
     .to(animState, { scanLinePos: 3, duration: 0.12 }, 0.74);
 
   // Show fish text ("See what others can't")
@@ -712,10 +714,10 @@ function updateScene() {
       const sampleDist = 1.5; // distance to sample for tilt
 
       const hCenter = getWaveHeight(bx, bz, t);
-      const hFront  = getWaveHeight(bx + sampleDist, bz, t);
-      const hBack   = getWaveHeight(bx - sampleDist, bz, t);
-      const hLeft   = getWaveHeight(bx, bz - sampleDist, t);
-      const hRight  = getWaveHeight(bx, bz + sampleDist, t);
+      const hFront = getWaveHeight(bx + sampleDist, bz, t);
+      const hBack = getWaveHeight(bx - sampleDist, bz, t);
+      const hLeft = getWaveHeight(bx, bz - sampleDist, t);
+      const hRight = getWaveHeight(bx, bz + sampleDist, t);
 
       // Pitch (nose up/down) from front-to-back slope
       const pitch = Math.atan2(hFront - hBack, sampleDist * 2) * 0.8;
@@ -781,8 +783,8 @@ function updateScene() {
       if (lockCam > 0.001 && boatGroup) {
         // Compute world-space targets from boat-local offsets
         boatGroup.updateMatrixWorld();
-        const worldCamPos  = CAM_LOCAL_POS.clone().applyMatrix4(boatGroup.matrixWorld);
-        const worldLookAt  = CAM_LOCAL_LOOKAT.clone().applyMatrix4(boatGroup.matrixWorld);
+        const worldCamPos = CAM_LOCAL_POS.clone().applyMatrix4(boatGroup.matrixWorld);
+        const worldLookAt = CAM_LOCAL_LOOKAT.clone().applyMatrix4(boatGroup.matrixWorld);
 
         // Blend between free camera (animState values) and boat-locked camera
         const freeX = animState.cameraX, freeY = animState.cameraY, freeZ = animState.cameraZ;
@@ -871,7 +873,7 @@ function updateScene() {
     terrainMesh.material.opacity = pulse * tr;
 
     if (terrainEdges) {
-      terrainEdges.material.opacity = pulse * 1.6 * tr;  
+      terrainEdges.material.opacity = pulse * 1.6 * tr;
     }
     if (terrainContours) {
       terrainContours.children.forEach((child, i) => {
@@ -892,6 +894,12 @@ function updateScene() {
     });
 
 
+  }
+
+  // Animate FOV (skip when camera editor is actively controlling it)
+  if (!window.cameraEditorActive && camera.fov !== animState.fov) {
+    camera.fov = animState.fov;
+    camera.updateProjectionMatrix();
   }
 
   // Canvas opacity (force full opacity when camera editor is active)
