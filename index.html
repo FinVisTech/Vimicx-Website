@@ -382,19 +382,6 @@
       <button id="editor-export-btn">📋 Copy Log to Clipboard</button>
     </div>
     <div class="editor-export-row">
-      <button id="editor-log-btn">📄 Show Log in Console</button>
-    </div>
-    <pre id="editor-log-output" style="display:none;"></pre>
-  </div>
-
-  <!-- ===== Editor Toggle Button (hidden by default) ===== -->
-  <button id="editor-toggle-btn" title="Toggle Screen Editor" style="display:none;">🖥️ Edit Screens</button>
-
-  <!-- ===== Camera Editor Panel ===== -->
-  <div id="camera-editor" style="display:none;">
-    <div class="editor-header">
-      <span class="editor-title">📷 Camera Editor</span>
-      <button id="camera-close-btn" title="Close camera editor">✕</button>
     </div>
 
     <div class="camera-live-row">
@@ -449,14 +436,152 @@
     <pre id="camera-log-output" style="display:none;"></pre>
   </div>
 
-  <!-- ===== Camera Editor Toggle Button (hidden by default) ===== -->
-  <button id="camera-toggle-btn" title="Toggle Camera Editor" style="display:none;">📷 Camera</button>
+  <!-- ===== Scene Editor Panel ===== -->
+  <div id="scene-editor" style="display:none;">
+    <div class="editor-header">
+      <span class="editor-title">🌍 Scene Editor</span>
+      <button id="scene-close-btn" title="Close scene editor">✕</button>
+    </div>
+
+    <div class="editor-controls" id="scene-controls">
+      <div class="editor-group-label">Background & Fog</div>
+      <div class="editor-group">
+        <label>Background Color</label>
+        <input type="color" id="sc-bg-color" value="#1E1E1E">
+      </div>
+      <div class="editor-group">
+        <label>Fog Color</label>
+        <input type="color" id="sc-fog-color" value="#1E1E1E">
+      </div>
+      <div class="editor-group">
+        <label>Fog Density <span class="editor-val" id="sv-fog-density">0.018</span></label>
+        <input type="range" id="sc-fog-density" min="0" max="0.1" step="0.001" value="0.018">
+      </div>
+
+      <hr class="editor-sep">
+      <div class="editor-group-label">Ambient Light</div>
+      <div class="editor-group">
+        <label>Color</label>
+        <input type="color" id="sc-amb-color" value="#0a4a4a">
+      </div>
+      <div class="editor-group">
+        <label>Intensity <span class="editor-val" id="sv-amb-int">0.6</span></label>
+        <input type="range" id="sc-amb-int" min="0" max="5" step="0.1" value="0.6">
+      </div>
+
+      <hr class="editor-sep">
+      <div class="editor-group-label">Directional Light</div>
+      <div class="editor-group">
+        <label>Color</label>
+        <input type="color" id="sc-dir-color" value="#5ac8c8">
+      </div>
+      <div class="editor-group">
+        <label>Intensity <span class="editor-val" id="sv-dir-int">0.8</span></label>
+        <input type="range" id="sc-dir-int" min="0" max="5" step="0.1" value="0.8">
+      </div>
+
+      <hr class="editor-sep">
+      <div class="editor-group-label">Point Light (Cyan)</div>
+      <div class="editor-group">
+        <label>Color</label>
+        <input type="color" id="sc-cyan-color" value="#0C9AA1">
+      </div>
+      <div class="editor-group">
+        <label>Intensity <span class="editor-val" id="sv-cyan-int">1.5</span></label>
+        <input type="range" id="sc-cyan-int" min="0" max="5" step="0.1" value="1.5">
+      </div>
+
+      <hr class="editor-sep">
+      <div class="editor-group-label">Point Light (Magenta)</div>
+      <div class="editor-group">
+        <label>Color</label>
+        <input type="color" id="sc-mag-color" value="#7DFDFE">
+      </div>
+      <div class="editor-group">
+        <label>Intensity <span class="editor-val" id="sv-mag-int">0.8</span></label>
+        <input type="range" id="sc-mag-int" min="0" max="5" step="0.1" value="0.8">
+      </div>
+    </div>
+
+    <div class="editor-export-row">
+      <button id="scene-copy-btn">📋 Copy Settings</button>
+    </div>
+    <div class="editor-export-row">
+      <button id="scene-log-btn">📄 Show in Console</button>
+    </div>
+    <pre id="scene-log-output" style="display:none;"></pre>
+  </div>
+
+  <!-- ===== Boat Editor Panel ===== -->
+  <div id="boat-editor" style="display:none;">
+    <div class="editor-header">
+      <span class="editor-title">🚤 Boat Editor</span>
+      <button id="boat-close-btn" title="Close boat editor">✕</button>
+    </div>
+
+    <div class="editor-controls" id="boat-controls">
+      <div class="editor-group-label">Position</div>
+      <div class="editor-group">
+        <label>Pos X <span class="editor-val" id="bo-px">0</span></label>
+        <input type="range" id="boat-px" min="-10" max="10" step="0.1" value="0">
+      </div>
+      <div class="editor-group">
+        <label>Pos Y <span class="editor-val" id="bo-py">-1</span></label>
+        <input type="range" id="boat-py" min="-5" max="5" step="0.1" value="-1">
+      </div>
+      <div class="editor-group">
+        <label>Pos Z <span class="editor-val" id="bo-pz">0</span></label>
+        <input type="range" id="boat-pz" min="-10" max="10" step="0.1" value="0">
+      </div>
+      <hr class="editor-sep">
+      <div class="editor-group-label">Rotation</div>
+      <div class="editor-group">
+        <label>Yaw <span class="editor-val" id="bo-yaw">0°</span></label>
+        <input type="range" id="boat-yaw" min="-180" max="180" step="1" value="0">
+      </div>
+      <div class="editor-group">
+        <label>Pitch <span class="editor-val" id="bo-pitch">0°</span></label>
+        <input type="range" id="boat-pitch" min="-180" max="180" step="1" value="0">
+      </div>
+      <div class="editor-group">
+        <label>Roll <span class="editor-val" id="bo-roll">0°</span></label>
+        <input type="range" id="boat-roll" min="-180" max="180" step="1" value="0">
+      </div>
+      <hr class="editor-sep">
+      <div class="editor-group-label">Scale</div>
+      <div class="editor-group">
+        <label>Scale <span class="editor-val" id="bo-scale">1</span></label>
+        <input type="range" id="boat-scale" min="0.1" max="5" step="0.05" value="1">
+      </div>
+      <hr class="editor-sep">
+      <div class="editor-group-label">Appearance</div>
+      <div class="editor-group">
+        <label>Hull Color</label>
+        <input type="color" id="boat-color" value="#053030">
+      </div>
+    </div>
+
+    <div class="editor-export-row">
+      <button id="boat-copy-btn">📋 Copy Coordinates</button>
+    </div>
+    <div class="editor-export-row">
+      <button id="boat-log-btn">📄 Show in Console</button>
+    </div>
+    <pre id="boat-log-output" style="display:none;"></pre>
+  </div>
 
   <!-- ===== Bass Editor Panel ===== -->
   <div id="bass-editor" style="display:none;">
     <div class="editor-header">
       <span class="editor-title">🐟 Bass Editor</span>
       <button id="bass-close-btn" title="Close bass editor">✕</button>
+    </div>
+
+    <div class="editor-controls" id="bass-list-container" style="padding: 12px 20px 0; display: flex; flex-wrap: wrap; gap: 6px;">
+      <button class="screen-list-btn active" id="bass-select-0" style="padding: 6px 10px; font-size: 0.7rem;">Bass 1</button>
+      <button class="screen-list-btn" id="bass-select-1" style="padding: 6px 10px; font-size: 0.7rem;">Bass 2</button>
+      <button class="screen-list-btn" id="bass-select-2" style="padding: 6px 10px; font-size: 0.7rem;">Bass 3</button>
+      <button class="screen-list-btn" id="bass-select-3" style="padding: 6px 10px; font-size: 0.7rem;">Bass 4</button>
     </div>
 
     <div class="editor-controls" id="bass-controls">
@@ -493,6 +618,12 @@
         <label>Scale <span class="editor-val" id="bv-scale">1</span></label>
         <input type="range" id="bass-scale" min="0.1" max="5" step="0.05" value="1">
       </div>
+      <hr class="editor-sep">
+      <div class="editor-group-label">Appearance</div>
+      <div class="editor-group">
+        <label>Color</label>
+        <input type="color" id="bass-color" value="#FF3300">
+      </div>
     </div>
 
     <div class="editor-export-row">
@@ -504,12 +635,118 @@
     <pre id="bass-log-output" style="display:none;"></pre>
   </div>
 
-  <!-- ===== Bass Editor Toggle Button (hidden by default) ===== -->
-  <button id="bass-toggle-btn" title="Toggle Bass Editor" style="display:none;">🐟 Bass</button>
+  <!-- ===== Tree Editor Panel ===== -->
+  <div id="tree-editor" style="display:none;">
+    <div class="editor-header">
+      <span class="editor-title">🌳 Tree Editor</span>
+      <button id="tree-close-btn" title="Close tree editor">✕</button>
+    </div>
+
+    <div class="editor-controls" id="tree-controls">
+      <div class="editor-group-label">Position</div>
+      <div class="editor-group">
+        <label>Pos X <span class="editor-val" id="tv-px">0</span></label>
+        <input type="range" id="tree-px" min="-30" max="30" step="0.1" value="0">
+      </div>
+      <div class="editor-group">
+        <label>Pos Y <span class="editor-val" id="tv-py">-1</span></label>
+        <input type="range" id="tree-py" min="-10" max="10" step="0.1" value="-1">
+      </div>
+      <div class="editor-group">
+        <label>Pos Z <span class="editor-val" id="tv-pz">0</span></label>
+        <input type="range" id="tree-pz" min="-30" max="30" step="0.1" value="0">
+      </div>
+      <hr class="editor-sep">
+      <div class="editor-group-label">Rotation</div>
+      <div class="editor-group">
+        <label>Yaw <span class="editor-val" id="tv-yaw">0°</span></label>
+        <input type="range" id="tree-yaw" min="-180" max="180" step="1" value="0">
+      </div>
+      <div class="editor-group">
+        <label>Pitch <span class="editor-val" id="tv-pitch">0°</span></label>
+        <input type="range" id="tree-pitch" min="-180" max="180" step="1" value="0">
+      </div>
+      <div class="editor-group">
+        <label>Roll <span class="editor-val" id="tv-roll">0°</span></label>
+        <input type="range" id="tree-roll" min="-180" max="180" step="1" value="0">
+      </div>
+      <hr class="editor-sep">
+      <div class="editor-group-label">Scale</div>
+      <div class="editor-group">
+        <label>Scale <span class="editor-val" id="tv-scale">1</span></label>
+        <input type="range" id="tree-scale" min="0.1" max="5" step="0.05" value="1">
+      </div>
+      <hr class="editor-sep">
+      <div class="editor-group-label">Appearance</div>
+      <div class="editor-group">
+        <label>Color</label>
+        <input type="color" id="tree-color" value="#FF3300">
+      </div>
+    </div>
+
+    <div class="editor-export-row">
+      <button id="tree-copy-btn">📋 Copy Coordinates</button>
+    </div>
+    <div class="editor-export-row">
+      <button id="tree-log-btn">📄 Show in Console</button>
+    </div>
+    <pre id="tree-log-output" style="display:none;"></pre>
+  </div>
+
+  <!-- ===== Water Editor Panel ===== -->
+  <div id="water-editor" style="display:none;">
+    <div class="editor-header">
+      <span class="editor-title">🌊 Water Editor</span>
+      <button id="water-close-btn" title="Close water editor">✕</button>
+    </div>
+
+    <div class="editor-controls" id="water-controls">
+      <div class="editor-group-label">Appearance</div>
+      <div class="editor-group">
+        <label>Color</label>
+        <input type="color" id="wt-color" value="#1E1E1E">
+      </div>
+      <div class="editor-group">
+        <label>Specular</label>
+        <input type="color" id="wt-specular" value="#0C9AA1">
+      </div>
+      <div class="editor-group">
+        <label>Shininess <span class="editor-val" id="wv-shininess">90</span></label>
+        <input type="range" id="wt-shininess" min="0" max="200" step="1" value="90">
+      </div>
+      <div class="editor-group">
+        <label>Opacity <span class="editor-val" id="wv-opacity">0.95</span></label>
+        <input type="range" id="wt-opacity" min="0" max="1" step="0.01" value="0.95">
+      </div>
+    </div>
+
+    <div class="editor-export-row">
+      <button id="water-copy-btn">📋 Copy Settings</button>
+    </div>
+    <div class="editor-export-row">
+      <button id="water-log-btn">📄 Show in Console</button>
+    </div>
+    <pre id="water-log-output" style="display:none;"></pre>
+  </div>
+
+  <!-- ===== UNIFIED DEV MENU ===== -->
+  <div id="dev-menu-container" style="display:none;">
+    <button id="dev-menu-main-btn" title="Open Dev Tools">🛠️ Dev Tools</button>
+    <div id="dev-menu-dropdown" style="display:none;">
+      <button id="camera-toggle-btn" class="dev-dropdown-btn">📷 Camera</button>
+      <button id="editor-toggle-btn" class="dev-dropdown-btn">🖥️ Screens</button>
+      <button id="boat-toggle-btn" class="dev-dropdown-btn">🚤 Boat</button>
+      <button id="bass-toggle-btn" class="dev-dropdown-btn">🐟 Bass</button>
+      <button id="tree-toggle-btn" class="dev-dropdown-btn">🌳 Tree</button>
+      <button id="scene-toggle-btn" class="dev-dropdown-btn">🌍 Scene</button>
+      <button id="water-toggle-btn" class="dev-dropdown-btn">🌊 Water</button>
+    </div>
+  </div>
 
   <!-- ===== Scripts ===== -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
@@ -519,13 +756,40 @@
   <script>
     // Dev Mode Check: Only load dev tools if "?dev" is in the URL
     if (window.location.search.includes('dev')) {
-      // Show toggle buttons
-      const editorToggle = document.getElementById('editor-toggle-btn');
-      const cameraToggle = document.getElementById('camera-toggle-btn');
-      const bassToggle = document.getElementById('bass-toggle-btn');
-      if (editorToggle) editorToggle.style.display = 'block';
-      if (cameraToggle) cameraToggle.style.display = 'block';
-      if (bassToggle) bassToggle.style.display = 'block';
+      
+      window.vimicxEditorLogs = {};
+      window.copyAllDevSettings = function(btn) {
+        let allLogs = [];
+        for (let key in window.vimicxEditorLogs) {
+          try {
+            allLogs.push(window.vimicxEditorLogs[key]());
+          } catch(e) {}
+        }
+        const text = allLogs.join('\n\n------------------------------------------------------------\n\n');
+        navigator.clipboard.writeText(text).then(() => {
+          if (btn) {
+            const originalText = btn.textContent;
+            btn.textContent = '✅ Copied All!';
+            setTimeout(() => { btn.textContent = originalText; }, 2000);
+          }
+        }).catch(err => console.error('Failed to copy', err));
+      };
+      // Show unified dev menu
+      const devMenuContainer = document.getElementById('dev-menu-container');
+      const devMenuMainBtn = document.getElementById('dev-menu-main-btn');
+      const devMenuDropdown = document.getElementById('dev-menu-dropdown');
+      
+      if (devMenuContainer) devMenuContainer.style.display = 'block';
+      
+      if (devMenuMainBtn && devMenuDropdown) {
+        devMenuMainBtn.addEventListener('click', () => {
+          if (devMenuDropdown.style.display === 'none') {
+            devMenuDropdown.style.display = 'flex';
+          } else {
+            devMenuDropdown.style.display = 'none';
+          }
+        });
+      }
       
       // Dynamically load dev scripts
       const screenEditorScript = document.createElement('script');
@@ -539,6 +803,22 @@
       const bassEditorScript = document.createElement('script');
       bassEditorScript.src = 'dev/bass-editor.js';
       document.body.appendChild(bassEditorScript);
+
+      const treeEditorScript = document.createElement('script');
+      treeEditorScript.src = 'dev/tree-editor.js';
+      document.body.appendChild(treeEditorScript);
+
+      const boatEditorScript = document.createElement('script');
+      boatEditorScript.src = 'dev/boat-editor.js';
+      document.body.appendChild(boatEditorScript);
+
+      const sceneEditorScript = document.createElement('script');
+      sceneEditorScript.src = 'dev/scene-editor.js';
+      document.body.appendChild(sceneEditorScript);
+
+      const waterEditorScript = document.createElement('script');
+      waterEditorScript.src = 'dev/water-editor.js';
+      document.body.appendChild(waterEditorScript);
     }
   </script>
 </body>

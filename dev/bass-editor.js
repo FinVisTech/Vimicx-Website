@@ -1,6 +1,6 @@
 /* ============================================
    BASS EDITOR — Interactive tool for moving
-   the low-poly bass model.
+   the low-poly bass models.
    ============================================ */
 
 (function () {
@@ -10,6 +10,7 @@
   const RAD2DEG = 180 / Math.PI;
 
   let isOpen = false;
+  let selectedIdx = 0;
 
   // ===== DOM refs =====
   const panel      = document.getElementById('bass-editor');
@@ -19,6 +20,13 @@
   const logBtn     = document.getElementById('bass-log-btn');
   const logOutput  = document.getElementById('bass-log-output');
 
+  const selectBtns = [
+    document.getElementById('bass-select-0'),
+    document.getElementById('bass-select-1'),
+    document.getElementById('bass-select-2'),
+    document.getElementById('bass-select-3')
+  ];
+
   // Sliders
   const sl = {
     px:    document.getElementById('bass-px'),
@@ -27,7 +35,8 @@
     yaw:   document.getElementById('bass-yaw'),
     pitch: document.getElementById('bass-pitch'),
     roll:  document.getElementById('bass-roll'),
-    scale: document.getElementById('bass-scale')
+    scale: document.getElementById('bass-scale'),
+    color: document.getElementById('bass-color')
   };
 
   // Value displays
@@ -41,19 +50,40 @@
     scale: document.getElementById('bv-scale')
   };
 
+  function selectBass(idx) {
+    selectedIdx = idx;
+    selectBtns.forEach((btn, i) => {
+      if(btn) btn.classList.toggle('active', i === selectedIdx);
+    });
+    snapFromBass();
+  }
+
   // ===== Snap sliders from current bass model =====
   function snapFromBass() {
-    if (typeof bassModelGroup === 'undefined' || !bassModelGroup) return;
-    sl.px.value = bassModelGroup.position.x.toFixed(1);
-    sl.py.value = bassModelGroup.position.y.toFixed(1);
-    sl.pz.value = bassModelGroup.position.z.toFixed(1);
+    if (typeof bassModels === 'undefined' || bassModels.length === 0) return;
+    const group = bassModels[selectedIdx];
+    if (!group) return;
 
-    const euler = bassModelGroup.rotation;
+    sl.px.value = group.position.x.toFixed(1);
+    sl.py.value = group.position.y.toFixed(1);
+    sl.pz.value = group.position.z.toFixed(1);
+
+    const euler = group.rotation;
     sl.pitch.value = Math.round(euler.x * RAD2DEG);
     sl.yaw.value   = Math.round(euler.y * RAD2DEG);
     sl.roll.value  = Math.round(euler.z * RAD2DEG);
 
-    sl.scale.value = bassModelGroup.scale.x.toFixed(2);
+    sl.scale.value = group.scale.x.toFixed(2);
+
+    let foundMaterial = null;
+    group.traverse(child => {
+      if (!foundMaterial && child.material && child.material.color) {
+        foundMaterial = child.material;
+      }
+    });
+    if (foundMaterial) {
+      sl.color.value = '#' + foundMaterial.color.getHexString();
+    }
 
     updateDisplays();
   }
@@ -71,9 +101,11 @@
 
   // ===== Apply sliders to bass model =====
   function applyToBass() {
-    if (typeof bassModelGroup === 'undefined' || !bassModelGroup) return;
+    if (typeof bassModels === 'undefined' || bassModels.length === 0) return;
+    const group = bassModels[selectedIdx];
+    if (!group) return;
 
-    bassModelGroup.position.set(
+    group.position.set(
       parseFloat(sl.px.value),
       parseFloat(sl.py.value),
       parseFloat(sl.pz.value)
@@ -82,46 +114,67 @@
     const yawRad   = parseFloat(sl.yaw.value) * DEG2RAD;
     const pitchRad = parseFloat(sl.pitch.value) * DEG2RAD;
     const rollRad  = parseFloat(sl.roll.value) * DEG2RAD;
-    bassModelGroup.rotation.set(pitchRad, yawRad, rollRad, 'YXZ');
+    group.rotation.set(pitchRad, yawRad, rollRad, 'YXZ');
 
     const scale = parseFloat(sl.scale.value);
-    bassModelGroup.scale.set(scale, scale, scale);
+    group.scale.set(scale, scale, scale);
+
+    if (sl.color.value) {
+      const hexStr = sl.color.value.replace('#', '0x');
+      group.userData.color = hexStr; // save for export
+      const colorVal = parseInt(hexStr, 16);
+      group.traverse(child => {
+        if (child.material && child.material.color) {
+          child.material.color.setHex(colorVal);
+        }
+      });
+    }
 
     updateDisplays();
   }
 
   // ===== Generate coordinate log =====
   function generateLog() {
+    if (typeof bassModels === 'undefined' || bassModels.length === 0) return '{}';
+    
     const data = {
       _info: 'Vimicx Bass Coordinates',
-      position: {
-        x: parseFloat(parseFloat(sl.px.value).toFixed(2)),
-        y: parseFloat(parseFloat(sl.py.value).toFixed(2)),
-        z: parseFloat(parseFloat(sl.pz.value).toFixed(2)),
-      },
-      rotation: {
-        yaw: parseInt(sl.yaw.value),
-        pitch: parseInt(sl.pitch.value),
-        roll: parseInt(sl.roll.value),
-      },
-      scale: parseFloat(parseFloat(sl.scale.value).toFixed(2)),
-      _jsSnippet:
-        `bassModelGroup.position.set(${parseFloat(sl.px.value).toFixed(2)}, ${parseFloat(sl.py.value).toFixed(2)}, ${parseFloat(sl.pz.value).toFixed(2)});\n` +
-        `bassModelGroup.rotation.set(${parseInt(sl.pitch.value)} * DEG2RAD, ${parseInt(sl.yaw.value)} * DEG2RAD, ${parseInt(sl.roll.value)} * DEG2RAD, 'YXZ');\n` +
-        `bassModelGroup.scale.set(${parseFloat(sl.scale.value).toFixed(2)}, ${parseFloat(sl.scale.value).toFixed(2)}, ${parseFloat(sl.scale.value).toFixed(2)});`
+      _jsSnippet: 'const DEG2RAD = Math.PI / 180;\nbassModels = [];\nconst bassDefs = [\n'
     };
+    
+    const defs = [];
+    bassModels.forEach((group, i) => {
+      const p = group.position;
+      const r = group.rotation;
+      const s = group.scale.x;
+      
+      let c = group.userData.color || sl.color.value.replace('#', '0x');
+      if (typeof c === 'string' && c.startsWith('#')) c = c.replace('#', '0x');
+      
+      defs.push(`  { pos: [${p.x.toFixed(2)}, ${p.y.toFixed(2)}, ${p.z.toFixed(2)}], rot: [${Math.round(r.x*RAD2DEG)} * DEG2RAD, ${Math.round(r.y*RAD2DEG)} * DEG2RAD, ${Math.round(r.z*RAD2DEG)} * DEG2RAD], scale: ${s.toFixed(2)}, color: "${c}" }`);
+    });
+    
+    data._jsSnippet += defs.join(',\n') + '\n];\n';
+    data._jsSnippet += 'bassDefs.forEach(def => {\n  const group = new THREE.Group();\n  group.position.set(...def.pos);\n  group.rotation.set(def.rot[0], def.rot[1], def.rot[2], \'YXZ\');\n  group.scale.set(def.scale, def.scale, def.scale);\n  group.visible = false;\n  group.userData.color = def.color;\n  scene.add(group);\n  bassModels.push(group);\n});';
+    
     return JSON.stringify(data, null, 2);
   }
 
+  window.vimicxEditorLogs['bass'] = generateLog;
+
   function copyCoords() {
-    const text = generateLog();
-    navigator.clipboard.writeText(text).then(() => {
-      copyBtn.textContent = '✅ Copied!';
-      setTimeout(() => { copyBtn.textContent = '📋 Copy Coordinates'; }, 2000);
-    }).catch(() => {
-      logOutput.style.display = 'block';
-      logOutput.textContent = text;
-    });
+    if (window.copyAllDevSettings) {
+      window.copyAllDevSettings(copyBtn);
+    } else {
+      const text = generateLog();
+      navigator.clipboard.writeText(text).then(() => {
+        copyBtn.textContent = '✅ Copied!';
+        setTimeout(() => { copyBtn.textContent = '📋 Copy Settings'; }, 2000);
+      }).catch(() => {
+        logOutput.style.display = 'block';
+        logOutput.textContent = text;
+      });
+    }
   }
 
   function showLog() {
@@ -136,13 +189,13 @@
   function openEditor() {
     isOpen = true;
     panel.style.display = 'flex';
-    toggleBtn.style.display = 'none';
+    if(toggleBtn) toggleBtn.style.display = 'none';
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     // Make sure bass is visible when editing
-    if (typeof bassModelGroup !== 'undefined' && bassModelGroup) {
-      bassModelGroup.visible = true;
+    if (typeof bassModels !== 'undefined' && bassModels.length > 0) {
+      bassModels.forEach(g => g.visible = true);
     }
 
     snapFromBass();
@@ -151,40 +204,23 @@
   function closeEditor() {
     isOpen = false;
     panel.style.display = 'none';
-    toggleBtn.style.display = '';
+    if(toggleBtn) toggleBtn.style.display = '';
     logOutput.style.display = 'none';
   }
 
-  // ===== Per-frame tick: enforce bass transform every frame =====
-  function tick() {
-    if (isOpen && typeof bassModelGroup !== 'undefined' && bassModelGroup) {
-      bassModelGroup.position.set(
-        parseFloat(sl.px.value),
-        parseFloat(sl.py.value),
-        parseFloat(sl.pz.value)
-      );
-      const yawRad   = parseFloat(sl.yaw.value) * DEG2RAD;
-      const pitchRad = parseFloat(sl.pitch.value) * DEG2RAD;
-      const rollRad  = parseFloat(sl.roll.value) * DEG2RAD;
-      bassModelGroup.rotation.set(pitchRad, yawRad, rollRad, 'YXZ');
-
-      const scale = parseFloat(sl.scale.value);
-      bassModelGroup.scale.set(scale, scale, scale);
-    }
-    requestAnimationFrame(tick);
-  }
-  tick();
-
   // ===== Bind events =====
   function bindEvents() {
-    if (toggleBtn) toggleBtn.addEventListener('click', openEditor);
-    if (closeBtn) closeBtn.addEventListener('click', closeEditor);
-    if (copyBtn) copyBtn.addEventListener('click', copyCoords);
-    if (logBtn) logBtn.addEventListener('click', showLog);
+    if(toggleBtn) toggleBtn.addEventListener('click', openEditor);
+    if(closeBtn) closeBtn.addEventListener('click', closeEditor);
+    if(copyBtn) copyBtn.addEventListener('click', copyCoords);
+    if(logBtn) logBtn.addEventListener('click', showLog);
 
-    // Slider input events
+    selectBtns.forEach((btn, i) => {
+      if(btn) btn.addEventListener('click', () => selectBass(i));
+    });
+
     Object.keys(sl).forEach(key => {
-      if (sl[key]) {
+      if(sl[key]) {
         sl[key].addEventListener('input', () => {
           updateDisplays();
           applyToBass();
@@ -192,7 +228,6 @@
       }
     });
 
-    // Keyboard
     document.addEventListener('keydown', (e) => {
       if (!isOpen) return;
       if (e.key === 'Escape') closeEditor();
@@ -201,10 +236,10 @@
 
   // ===== Boot =====
   const check = setInterval(() => {
-    if (typeof bassModelGroup !== 'undefined') {
+    if (typeof bassModels !== 'undefined' && bassModels.length > 0) {
       clearInterval(check);
       bindEvents();
-      console.log('[Bass Editor] Ready — click "🐟 Bass" to start');
+      console.log('[Bass Editor] Ready');
     }
   }, 200);
 

@@ -148,15 +148,21 @@
     return JSON.stringify(data, null, 2);
   }
 
+  window.vimicxEditorLogs['camera'] = generateLog;
+
   function copyCoords() {
-    const text = generateLog();
-    navigator.clipboard.writeText(text).then(() => {
-      copyBtn.textContent = '✅ Copied!';
-      setTimeout(() => { copyBtn.textContent = '📋 Copy Coordinates'; }, 2000);
-    }).catch(() => {
-      logOutput.style.display = 'block';
-      logOutput.textContent = text;
-    });
+    if (window.copyAllDevSettings) {
+      window.copyAllDevSettings(copyBtn);
+    } else {
+      const text = generateLog();
+      navigator.clipboard.writeText(text).then(() => {
+        copyBtn.textContent = '✅ Copied!';
+        setTimeout(() => { copyBtn.textContent = '📋 Copy Coordinates'; }, 2000);
+      }).catch(() => {
+        logOutput.style.display = 'block';
+        logOutput.textContent = text;
+      });
+    }
   }
 
   function showLog() {

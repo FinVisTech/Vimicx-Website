@@ -9,7 +9,9 @@ let boatGroup, screenMeshes = [], screenEdges = [];
 let wireframeClones = [];
 let fishGroup, fishBody, fishGlow, scanLine;
 let waterPlane, waterGeo;
-let bassModelGroup; // Low poly bass — locked to terrain, NOT riding waves
+let bassModels = []; // Array of Low poly bass models — locked to terrain
+let treeModelGroup; // Low poly tree wireframe
+let ambientLight, dirLight, pointCyan, pointMagenta;
 
 // Dot-grid masking system — renders dots only where no 3D objects are visible
 let maskRenderTarget;
@@ -18,6 +20,7 @@ let animState = {
   screenOpacity: 1,
   terrainReveal: 0,
   fishVisibility: 0,
+  treeVisibility: 0,
   scanLinePos: -2,
   boatRotY: 0,
   boatRotSpeed: 1,
@@ -59,26 +62,26 @@ function init() {
   scene.fog = new THREE.FogExp2(0x1E1E1E, 0.018);
 
   // Camera
-  camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
-  camera.position.set(0, 3, 8);
-  camera.lookAt(0, 0.5, 0);
+  camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+  camera.position.set(0.0, 3.0, 8.0);
+  camera.lookAt(0.00, -0.42, -1.40);
 
   // ---- Dot-grid masking system ----
   setupDotGridMask();
 
   // Lights
-  const ambient = new THREE.AmbientLight(0x0a4a4a, 0.6);
-  scene.add(ambient);
+  ambientLight = new THREE.AmbientLight(0x0a4a4a, 0.6);
+  scene.add(ambientLight);
 
-  const dirLight = new THREE.DirectionalLight(0x5ac8c8, 0.8);
+  dirLight = new THREE.DirectionalLight(0x5ac8c8, 0.8);
   dirLight.position.set(5, 8, 5);
   scene.add(dirLight);
 
-  const pointCyan = new THREE.PointLight(0x0C9AA1, 1.5, 20);
+  pointCyan = new THREE.PointLight(0x0C9AA1, 1.5, 20);
   pointCyan.position.set(-3, 4, 2);
   scene.add(pointCyan);
 
-  const pointMagenta = new THREE.PointLight(0x7DFDFE, 0.8, 15);
+  pointMagenta = new THREE.PointLight(0x7DFDFE, 0.8, 15);
   pointMagenta.position.set(3, 2, -2);
   scene.add(pointMagenta);
 
@@ -86,6 +89,7 @@ function init() {
   buildDotGridPlane(); // background dot grid in 3D scene
   buildBoat(); // screens, wireframe clones, and terrain built inside STL load callback
   buildFish();
+  buildTree();
   buildParticles();
 
   // Setup animations
@@ -106,7 +110,9 @@ let boatLoaded = false;
 
 function buildBoat() {
   boatGroup = new THREE.Group();
-  boatGroup.position.y = 0.3;
+  boatGroup.position.set(0.00, -1.00, 0.00);
+  boatGroup.rotation.set(0, 0, 0, 'YXZ');
+  boatGroup.scale.set(1.00, 1.00, 1.00);
   scene.add(boatGroup);
 
   const loader = new THREE.STLLoader();
@@ -209,21 +215,7 @@ function buildScreens() {
   // Exact positions and rotations from user's editor session.
   // All screens face stern (-X) via rotY ≈ π/2, tilted upward via rotX.
 
-  const screenDefs = [
-    // --- BOW / CONSOLE SCREENS (3 screens at the helm) ---
-    // Screen 1: Main center console (large, primary display)
-    { w: 0.55, h: 0.4, pos: [2.11, 0.41, -0.05], rot: [-0.297, 1.571, 0.244], color: 0x0C9AA1 },
-    // Screen 2: Right console screen (angled inward)
-    { w: 0.35, h: 0.28, pos: [1.85, 0.33, 0.27], rot: [-0.122, 1.222, 0], color: 0x7DFDFE },
-    // Screen 3: Upper console screen
-    { w: 0.35, h: 0.28, pos: [2.24, 0.65, -0.02], rot: [0, 1.606, 0], color: 0x0C9AA1 },
-
-    // --- SEAT SCREENS (1 in front of each seat) ---
-    // Screen 4: Right seat screen
-    { w: 0.3, h: 0.22, pos: [-0.09, 0.53, 0.56], rot: [-0.454, 1.553, 0.489], color: 0x7DFDFE },
-    // Screen 5: Left seat screen
-    { w: 0.3, h: 0.22, pos: [-0.09, 0.37, -0.50], rot: [0.035, 1.571, 0], color: 0x0C9AA1 },
-  ];
+  const screenDefs = [];
 
   screenDefs.forEach((def, i) => {
     const geo = new THREE.PlaneGeometry(def.w, def.h);
@@ -270,14 +262,28 @@ function buildWireframeClones() {
 
 // ===== FISH (Low Poly Bass STL — replaces procedural fish) =====
 function buildFish() {
-  // Create a group for the bass model, added to scene (not boatGroup)
-  // so we can lock it to terrain-space manually
-  bassModelGroup = new THREE.Group();
-  bassModelGroup.position.set(5.50, -0.80, -2.60);
-  bassModelGroup.rotation.set(0, 59 * (Math.PI / 180), 0, 'YXZ');
-  bassModelGroup.scale.set(0.55, 0.55, 0.55);
-  bassModelGroup.visible = false; // hidden until fish reveal phase
-  scene.add(bassModelGroup);
+  const DEG2RAD = Math.PI / 180;
+  bassModels = [];
+
+  // Define 4 initial bases.
+  const bassDefs = [
+    { pos: [5.50, -0.80, -2.60], rot: [0, 59 * DEG2RAD, 0], scale: 0.35, color: 0xff3300 },
+    { pos: [3.50, -1.20, -3.00], rot: [0, 30 * DEG2RAD, 0], scale: 0.30, color: 0xff3300 },
+    { pos: [7.50, -0.50, -1.50], rot: [0, 80 * DEG2RAD, 0], scale: 0.35, color: 0xff3300 },
+    { pos: [4.50, -1.50, -4.00], rot: [0, 45 * DEG2RAD, 0], scale: 0.25, color: 0xff3300 },
+  ];
+
+  bassDefs.forEach(def => {
+    const group = new THREE.Group();
+    group.position.set(...def.pos);
+    group.rotation.set(def.rot[0], def.rot[1], def.rot[2], 'YXZ');
+    group.scale.set(def.scale, def.scale, def.scale);
+    group.visible = false; // hidden until fish reveal phase
+    // Store original color inside the group for easy access in editor
+    group.userData.color = def.color;
+    scene.add(group);
+    bassModels.push(group);
+  });
 
 
 
@@ -366,14 +372,17 @@ function buildFish() {
     const wireGeo = new THREE.BufferGeometry();
     wireGeo.setAttribute('position', new THREE.Float32BufferAttribute(edgePoints, 3));
 
-    const wireMat = new THREE.LineBasicMaterial({
-      color: 0xFF3300,
-      transparent: true,
-      opacity: 0
+    bassModels.forEach((group, index) => {
+      // Clone the geometry and material for independent editing later
+      const clonedMat = new THREE.LineBasicMaterial({
+        color: group.userData.color,
+        transparent: true,
+        opacity: 0
+      });
+      const clonedLines = new THREE.LineSegments(wireGeo, clonedMat);
+      clonedLines.name = 'bass_wireframe_' + index;
+      group.add(clonedLines);
     });
-    const wireLines = new THREE.LineSegments(wireGeo, wireMat);
-    wireLines.name = 'bass_wireframe';
-    bassModelGroup.add(wireLines);
   },
     function (xhr) {
       console.log('LowPolyBass STL: ' + (xhr.loaded / xhr.total * 100).toFixed(0) + '% loaded');
@@ -381,6 +390,43 @@ function buildFish() {
     function (error) {
       console.error('Error loading LowPolyBass STL:', error);
     });
+}
+
+// ===== TREE (Loaded as Pre-computed Wireframe OBJ) =====
+function buildTree() {
+  treeModelGroup = new THREE.Group();
+  const DEG2RAD = Math.PI / 180;
+  treeModelGroup.position.set(8.50, -1.90, 0.90);
+  treeModelGroup.rotation.set(0 * DEG2RAD, 0 * DEG2RAD, 0 * DEG2RAD, 'YXZ');
+  treeModelGroup.scale.set(0.30, 0.30, 0.30);
+  treeModelGroup.visible = false; // hidden until phase 4
+  scene.add(treeModelGroup);
+
+  const loader = new THREE.OBJLoader();
+  loader.load('3d assets/tree_wireframe.obj', function (object) {
+    // OBJLoader returns a Group containing meshes or line segments
+    object.traverse(function (child) {
+      if (child.isLineSegments || child.isLine) {
+        child.material = new THREE.LineBasicMaterial({
+          color: 0x04ff00,
+          transparent: true,
+          opacity: 0
+        });
+      }
+    });
+    
+    // Scale to fit visually
+    object.scale.set(1, 1, 1); 
+    
+    treeModelGroup.add(object);
+    console.log('Tree wireframe loaded');
+  },
+  function (xhr) {
+    console.log('Tree Wireframe OBJ: ' + (xhr.loaded / xhr.total * 100).toFixed(0) + '% loaded');
+  },
+  function (error) {
+    console.error('Error loading Tree Wireframe OBJ:', error);
+  });
 }
 
 // ===== UNDERWATER TERRAIN TOPOLOGY =====
@@ -459,6 +505,14 @@ function buildWater() {
   terrainMesh.position.y = -1.8;
   terrainMesh.name = 'terrain';
   terrainAnchor.add(terrainMesh);
+
+  // Invisible solid mesh that only writes to depth buffer to occlude objects behind the terrain
+  const occluderMat = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: true });
+  const terrainOccluder = new THREE.Mesh(terrainGeo, occluderMat);
+  terrainOccluder.position.copy(terrainMesh.position);
+  terrainOccluder.name = 'terrain_occluder';
+  terrainOccluder.renderOrder = -1; // render before other objects to populate depth buffer
+  terrainAnchor.add(terrainOccluder);
 
   const edgeGeo = new THREE.EdgesGeometry(terrainGeo, 12);
   const edgeMat = new THREE.LineBasicMaterial({
@@ -632,17 +686,20 @@ function setupScrollAnimations() {
   // Lock camera to boat — starts after alignment is well underway
   tl.to(animState, { cameraLockedToBoat: 1, duration: 0.15, ease: 'power2.inOut' }, 0.44);
 
-  // Phase 3: Fish reveal (68-88%) — pushed later for more wireframe viewing time
-  tl.to(animState, { fishVisibility: 1, duration: 0.15 }, 0.68)
-    .to(animState, { cameraY: 2.4, duration: 0.12 }, 0.72)
-    .to(animState, { scanLinePos: 3, duration: 0.12 }, 0.74);
+  // Phase 3: Fish reveal — moved earlier to reduce dead scrolling
+  tl.to(animState, { fishVisibility: 1, duration: 0.15 }, 0.55)
+    .to(animState, { cameraY: 2.4, duration: 0.12 }, 0.59)
+    .to(animState, { scanLinePos: 3, duration: 0.12 }, 0.61);
 
   // Show fish text ("See what others can't")
-  tl.to('#t-text-3', { opacity: 1, duration: 0.06 }, 0.72)
-    .to('#t-text-3', { opacity: 0, duration: 0.06 }, 0.88);
+  tl.to('#t-text-3', { opacity: 1, duration: 0.06 }, 0.59)
+    .to('#t-text-3', { opacity: 0, duration: 0.06 }, 0.80);
 
-  // Phase 4: Fade out canvas (90-100%)
-  tl.to(animState, { canvasOpacity: 0, duration: 0.10 }, 0.90);
+  // Phase 4: Tree reveal (same timing as fish)
+  tl.to(animState, { treeVisibility: 1, duration: 0.15 }, 0.55);
+
+  // Phase 5: Fade out canvas (95-100%)
+  tl.to(animState, { canvasOpacity: 0, duration: 0.05 }, 0.95);
 
   // ===== CONTENT SECTION CANVAS FADE =====
   ScrollTrigger.create({
@@ -719,8 +776,8 @@ function updateScene() {
 
   // In editor mode, skip auto-rotation and camera overrides
   if (!editorMode) {
-    // Boat rides the waves — freeze ALL motion when camera editor is active
-    if (boatGroup && !window.cameraEditorActive) {
+    // Boat rides the waves — freeze ALL motion when camera or boat editor is active
+    if (boatGroup && !window.cameraEditorActive && !window.boatEditorActive) {
       // Sample wave at boat origin and nearby points for slope
       const bx = 0, bz = 0; // boat center in local coords
       const sampleDist = 1.5; // distance to sample for tilt
@@ -868,9 +925,11 @@ function updateScene() {
     }
     wPos.needsUpdate = true;
     waterGeo.computeVertexNormals();
-    // Water opacity follows animState
-    waterPlane.material.opacity = animState.waterOpacity * 0.95;
-    waterPlane.visible = animState.waterOpacity > 0.01;
+    // Water opacity follows animState, unless overriden by Dev Tools
+    if (!window.waterEditorActive) {
+      waterPlane.material.opacity = animState.waterOpacity * 0.95;
+    }
+    waterPlane.visible = animState.waterOpacity > 0.01 || window.waterEditorActive;
   }
 
   // Terrain wiremesh topology — revealed after screens disappear and water fades
@@ -892,16 +951,28 @@ function updateScene() {
 
   // Low Poly Bass wireframe — revealed during fish phase (Phase 3)
   const fv = animState.fishVisibility;
-  if (bassModelGroup) {
-    bassModelGroup.visible = fv > 0.01;
+  if (bassModels.length > 0) {
     const bassPulse = Math.sin(t * 2.0) * 0.05 + 0.85;
-    bassModelGroup.children.forEach(child => {
+    bassModels.forEach(group => {
+      group.visible = fv > 0.01;
+      group.children.forEach(child => {
+        if (child.material) {
+          child.material.opacity = bassPulse * fv * 0.85;
+        }
+      });
+    });
+  }
+
+  // Tree wireframe — revealed during Phase 4
+  const tv = animState.treeVisibility;
+  if (treeModelGroup) {
+    treeModelGroup.visible = tv > 0.01;
+    const treePulse = Math.sin(t * 1.8) * 0.05 + 0.85;
+    treeModelGroup.traverse(child => {
       if (child.material) {
-        child.material.opacity = bassPulse * fv * 0.85;
+        child.material.opacity = treePulse * tv * 0.85;
       }
     });
-
-
   }
 
   // Animate FOV (skip when camera editor is actively controlling it)
@@ -1066,12 +1137,16 @@ function renderDotGridOverlay() {
     // Skip elements that should NOT mask the dot grid:
     // - ambient particles (decorative floating points)
     // - bass wireframe model (thin lines cause unstable masking)
+    // - tree wireframe model
+    // - terrain occluder (invisible depth mask)
     if (obj.name === 'ambient_particles') return;
-    if (obj === bassModelGroup) return;
-    // Skip anything parented under bassModelGroup
+    if (obj.name === 'terrain_occluder') return;
+    if (bassModels.includes(obj)) return;
+    if (obj === treeModelGroup) return;
+    // Skip anything parented under bassModels or treeModelGroup
     let skipParent = obj.parent;
     while (skipParent) {
-      if (skipParent === bassModelGroup) return;
+      if (bassModels.includes(skipParent) || skipParent === treeModelGroup) return;
       skipParent = skipParent.parent;
     }
 
