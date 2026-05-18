@@ -716,8 +716,15 @@ function setupScrollAnimations() {
   // Phase 4: Tree reveal (same timing as fish)
   tl.to(animState, { treeVisibility: 1, duration: 0.15 }, 0.55);
 
-  // Phase 5: Fade out canvas (95-100%)
-  tl.to(animState, { canvasOpacity: 0, duration: 0.05 }, 0.95);
+  // Phase 5: Staggered fade-out — tree first, then bass, then terrain, then canvas
+  // Tree fades away first (80-88%)
+  tl.to(animState, { treeVisibility: 0, duration: 0.08, ease: 'power2.in' }, 0.80);
+  // Bass models fade next (84-92%)
+  tl.to(animState, { fishVisibility: 0, duration: 0.08, ease: 'power2.in' }, 0.84);
+  // Terrain fades out (88-95%)
+  tl.to(animState, { terrainReveal: 0, duration: 0.07, ease: 'power2.in' }, 0.88);
+  // Canvas fades to transparent last (92-100%) — no black, scene dissolves away
+  tl.to(animState, { canvasOpacity: 0, duration: 0.08, ease: 'power1.in' }, 0.92);
 
   // ===== CONTENT SECTION CANVAS FADE =====
   ScrollTrigger.create({
