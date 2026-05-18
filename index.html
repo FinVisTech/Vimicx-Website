@@ -452,6 +452,61 @@
   <!-- ===== Camera Editor Toggle Button (hidden by default) ===== -->
   <button id="camera-toggle-btn" title="Toggle Camera Editor" style="display:none;">📷 Camera</button>
 
+  <!-- ===== Bass Editor Panel ===== -->
+  <div id="bass-editor" style="display:none;">
+    <div class="editor-header">
+      <span class="editor-title">🐟 Bass Editor</span>
+      <button id="bass-close-btn" title="Close bass editor">✕</button>
+    </div>
+
+    <div class="editor-controls" id="bass-controls">
+      <div class="editor-group-label">Position</div>
+      <div class="editor-group">
+        <label>Pos X <span class="editor-val" id="bv-px">0</span></label>
+        <input type="range" id="bass-px" min="-10" max="10" step="0.1" value="0">
+      </div>
+      <div class="editor-group">
+        <label>Pos Y <span class="editor-val" id="bv-py">-1</span></label>
+        <input type="range" id="bass-py" min="-5" max="5" step="0.1" value="-1">
+      </div>
+      <div class="editor-group">
+        <label>Pos Z <span class="editor-val" id="bv-pz">0</span></label>
+        <input type="range" id="bass-pz" min="-10" max="10" step="0.1" value="0">
+      </div>
+      <hr class="editor-sep">
+      <div class="editor-group-label">Rotation</div>
+      <div class="editor-group">
+        <label>Yaw <span class="editor-val" id="bv-yaw">0°</span></label>
+        <input type="range" id="bass-yaw" min="-180" max="180" step="1" value="0">
+      </div>
+      <div class="editor-group">
+        <label>Pitch <span class="editor-val" id="bv-pitch">0°</span></label>
+        <input type="range" id="bass-pitch" min="-180" max="180" step="1" value="0">
+      </div>
+      <div class="editor-group">
+        <label>Roll <span class="editor-val" id="bv-roll">0°</span></label>
+        <input type="range" id="bass-roll" min="-180" max="180" step="1" value="0">
+      </div>
+      <hr class="editor-sep">
+      <div class="editor-group-label">Scale</div>
+      <div class="editor-group">
+        <label>Scale <span class="editor-val" id="bv-scale">1</span></label>
+        <input type="range" id="bass-scale" min="0.1" max="5" step="0.05" value="1">
+      </div>
+    </div>
+
+    <div class="editor-export-row">
+      <button id="bass-copy-btn">📋 Copy Coordinates</button>
+    </div>
+    <div class="editor-export-row">
+      <button id="bass-log-btn">📄 Show in Console</button>
+    </div>
+    <pre id="bass-log-output" style="display:none;"></pre>
+  </div>
+
+  <!-- ===== Bass Editor Toggle Button (hidden by default) ===== -->
+  <button id="bass-toggle-btn" title="Toggle Bass Editor" style="display:none;">🐟 Bass</button>
+
   <!-- ===== Scripts ===== -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
@@ -467,8 +522,10 @@
       // Show toggle buttons
       const editorToggle = document.getElementById('editor-toggle-btn');
       const cameraToggle = document.getElementById('camera-toggle-btn');
+      const bassToggle = document.getElementById('bass-toggle-btn');
       if (editorToggle) editorToggle.style.display = 'block';
       if (cameraToggle) cameraToggle.style.display = 'block';
+      if (bassToggle) bassToggle.style.display = 'block';
       
       // Dynamically load dev scripts
       const screenEditorScript = document.createElement('script');
@@ -478,6 +535,10 @@
       const cameraEditorScript = document.createElement('script');
       cameraEditorScript.src = 'dev/camera-editor.js';
       document.body.appendChild(cameraEditorScript);
+
+      const bassEditorScript = document.createElement('script');
+      bassEditorScript.src = 'dev/bass-editor.js';
+      document.body.appendChild(bassEditorScript);
     }
   </script>
 </body>

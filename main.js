@@ -273,7 +273,9 @@ function buildFish() {
   // Create a group for the bass model, added to scene (not boatGroup)
   // so we can lock it to terrain-space manually
   bassModelGroup = new THREE.Group();
-  bassModelGroup.position.set(0, -1.0, 0);
+  bassModelGroup.position.set(5.50, -0.80, -2.60);
+  bassModelGroup.rotation.set(0, 59 * (Math.PI / 180), 0, 'YXZ');
+  bassModelGroup.scale.set(0.55, 0.55, 0.55);
   bassModelGroup.visible = false; // hidden until fish reveal phase
   scene.add(bassModelGroup);
 
@@ -365,7 +367,7 @@ function buildFish() {
     wireGeo.setAttribute('position', new THREE.Float32BufferAttribute(edgePoints, 3));
 
     const wireMat = new THREE.LineBasicMaterial({
-      color: 0x0C9AA1,
+      color: 0xFF3300,
       transparent: true,
       opacity: 0
     });
