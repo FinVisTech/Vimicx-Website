@@ -190,6 +190,7 @@
     isOpen = true;
     panel.style.display = 'flex';
     if(toggleBtn) toggleBtn.style.display = 'none';
+    document.body.classList.add('editor-active');
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -206,6 +207,7 @@
     panel.style.display = 'none';
     if(toggleBtn) toggleBtn.style.display = '';
     logOutput.style.display = 'none';
+    document.body.classList.remove('editor-active');
   }
 
   // ===== Bind events =====
@@ -232,6 +234,40 @@
       if (!isOpen) return;
       if (e.key === 'Escape') closeEditor();
     });
+
+    // 3D Scene Picking
+    const raycaster = new THREE.Raycaster();
+    raycaster.params.Line.threshold = 0.5;
+    const mouse = new THREE.Vector2();
+    const canvas = document.getElementById('three-canvas');
+    if (canvas) {
+      canvas.addEventListener('pointerdown', (e) => {
+        if (!isOpen) return;
+        
+        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        
+        if (typeof camera !== 'undefined' && camera) {
+          raycaster.setFromCamera(mouse, camera);
+          
+          const intersects = raycaster.intersectObjects(bassModels, true);
+          if (intersects.length > 0) {
+            let object = intersects[0].object;
+            // Traverse up to find the group in bassModels
+            while (object && !bassModels.includes(object)) {
+              object = object.parent;
+            }
+            
+            if (object) {
+              const index = bassModels.indexOf(object);
+              if (index !== -1) {
+                selectBass(index);
+              }
+            }
+          }
+        }
+      });
+    }
   }
 
   // ===== Boot =====

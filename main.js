@@ -288,7 +288,7 @@ function buildFish() {
     { pos: [5.50, -0.80, -2.60], rot: [0, 59 * DEG2RAD, 0], scale: 0.35, color: 0xff3300 },
     { pos: [3.50, -1.20, -3.00], rot: [0, 30 * DEG2RAD, 0], scale: 0.30, color: 0xff3300 },
     { pos: [7.50, -0.50, -1.50], rot: [0, 80 * DEG2RAD, 0], scale: 0.35, color: 0xff3300 },
-    { pos: [4.50, -1.50, -4.00], rot: [0, 45 * DEG2RAD, 0], scale: 0.25, color: 0xff3300 },
+    { pos: [9.50, -1.50, 1.60], rot: [0, 45 * DEG2RAD, 0], scale: 0.25, color: 0xff3300 },
   ];
 
   bassDefs.forEach(def => {
