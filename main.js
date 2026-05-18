@@ -34,7 +34,7 @@ let animState = {
   lookAtZ: 0,
   canvasOpacity: 1,
   waterOpacity: 1,
-  fov: 50
+  fov: window.innerWidth < 768 ? 75 : 45
 };
 
 // Boat-local camera offsets — these define WHERE on the boat the camera sits
@@ -62,7 +62,7 @@ function init() {
   scene.fog = new THREE.FogExp2(0x1E1E1E, 0.018);
 
   // Camera
-  const initialFov = window.innerWidth < 768 ? 120 : 45;
+  const initialFov = window.innerWidth < 768 ? 75 : 45;
   camera = new THREE.PerspectiveCamera(initialFov, window.innerWidth / window.innerHeight, 0.1, 100);
   camera.position.set(0.0, 3.0, 8.0);
   camera.lookAt(0.00, -0.42, -1.40);
@@ -216,32 +216,48 @@ function buildScreens() {
   // Exact positions and rotations from user's editor session.
   // All screens face stern (-X) via rotY ≈ π/2, tilted upward via rotX.
 
-  const screenDefs = [];
+  const screenDefs = [
+    // --- BOW / CONSOLE SCREENS (3 screens at the helm) ---
+    // Screen 1: Main center console (large, primary display)
+    { w: 0.55, h: 0.4, pos: [2.11, 0.41, -0.05], rot: [-0.297, 1.571, 0.244], color: 0x00f0ff },
+    // Screen 2: Right console screen (angled inward)
+    { w: 0.35, h: 0.28, pos: [1.85, 0.33, 0.27], rot: [-0.122, 1.222, 0], color: 0x00ff88 },
+    // Screen 3: Upper console screen
+    { w: 0.35, h: 0.28, pos: [2.24, 0.65, -0.02], rot: [0, 1.606, 0], color: 0x00f0ff },
+
+    // --- SEAT SCREENS (1 in front of each seat) ---
+    // Screen 4: Right seat screen
+    { w: 0.3, h: 0.22, pos: [-0.09, 0.53, 0.56], rot: [-0.454, 1.553, 0.489], color: 0x8b5cf6 },
+    // Screen 5: Left seat screen
+    { w: 0.3, h: 0.22, pos: [-0.09, 0.37, -0.50], rot: [0.035, 1.571, 0], color: 0x00ff88 },
+  ];
 
   screenDefs.forEach((def, i) => {
     const geo = new THREE.PlaneGeometry(def.w, def.h);
     const mat = new THREE.MeshBasicMaterial({
-      color: def.color, transparent: true, opacity: 0.7, side: THREE.DoubleSide
+      color: def.color, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false
     });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(...def.pos);
     mesh.rotation.set(...def.rot);
+    mesh.renderOrder = 10;
     boatGroup.add(mesh);
     screenMeshes.push(mesh);
 
     // Glow border
     const edgeGeo = new THREE.EdgesGeometry(geo);
-    const edgeMat = new THREE.LineBasicMaterial({ color: def.color, transparent: true, opacity: 0.9 });
+    const edgeMat = new THREE.LineBasicMaterial({ color: def.color, transparent: true, opacity: 0.9, depthWrite: false });
     const edges = new THREE.LineSegments(edgeGeo, edgeMat);
     edges.position.copy(mesh.position);
     edges.rotation.copy(mesh.rotation);
+    edges.renderOrder = 11;
     boatGroup.add(edges);
     screenEdges.push(edges);
 
     // Inner grid lines for "data" effect
     const gridGeo = new THREE.PlaneGeometry(def.w * 0.85, def.h * 0.85, 4, 3);
     const gridMat = new THREE.MeshBasicMaterial({
-      color: def.color, wireframe: true, transparent: true, opacity: 0.25
+      color: def.color, wireframe: true, transparent: true, opacity: 0.25, depthWrite: false
     });
     const grid = new THREE.Mesh(gridGeo, gridMat);
     grid.position.copy(mesh.position);
@@ -250,6 +266,7 @@ function buildScreens() {
     fwd.applyEuler(mesh.rotation);
     grid.position.add(fwd);
     grid.rotation.copy(mesh.rotation);
+    grid.renderOrder = 12;
     boatGroup.add(grid);
     screenMeshes.push(grid);
   });
@@ -415,19 +432,19 @@ function buildTree() {
         });
       }
     });
-    
+
     // Scale to fit visually
-    object.scale.set(1, 1, 1); 
-    
+    object.scale.set(1, 1, 1);
+
     treeModelGroup.add(object);
     console.log('Tree wireframe loaded');
   },
-  function (xhr) {
-    console.log('Tree Wireframe OBJ: ' + (xhr.loaded / xhr.total * 100).toFixed(0) + '% loaded');
-  },
-  function (error) {
-    console.error('Error loading Tree Wireframe OBJ:', error);
-  });
+    function (xhr) {
+      console.log('Tree Wireframe OBJ: ' + (xhr.loaded / xhr.total * 100).toFixed(0) + '% loaded');
+    },
+    function (error) {
+      console.error('Error loading Tree Wireframe OBJ:', error);
+    });
 }
 
 // ===== UNDERWATER TERRAIN TOPOLOGY =====
@@ -673,7 +690,7 @@ function setupScrollAnimations() {
     .to(animState, { cameraX: 1.7, cameraZ: 0, duration: 0.15 }, 0.20)
     .to(animState, { cameraY: 2.4, duration: 0.15 }, 0.25)
     .to(animState, { lookAtX: 8.77, lookAtY: -4.67, lookAtZ: 0, duration: 0.15 }, 0.20)
-    .to(animState, { fov: 70, duration: 0.15, ease: 'power2.inOut' }, 0.20);
+    .to(animState, { fov: window.innerWidth < 768 ? 120 : 70, duration: 0.15, ease: 'power2.inOut' }, 0.20);
 
   // Show solution text
   tl.to('#t-text-2', { opacity: 1, duration: 0.06 }, 0.25)
@@ -896,9 +913,11 @@ function updateScene() {
   if (!editorMode) {
     screenMeshes.forEach(m => {
       m.material.opacity = animState.screenOpacity * (m.material.wireframe ? 0.25 : 0.7);
+      m.visible = animState.screenOpacity > 0.01;
     });
     screenEdges.forEach(e => {
       e.material.opacity = animState.screenOpacity * 0.9;
+      e.visible = animState.screenOpacity > 0.01;
     });
   }
 
@@ -998,7 +1017,7 @@ function animate() {
 
 // ===== RESIZE =====
 function onResize() {
-  camera.fov = window.innerWidth < 768 ? 120 : 45;
+  camera.fov = window.innerWidth < 768 ? 75 : 45;
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
