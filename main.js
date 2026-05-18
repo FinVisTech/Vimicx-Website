@@ -62,7 +62,8 @@ function init() {
   scene.fog = new THREE.FogExp2(0x1E1E1E, 0.018);
 
   // Camera
-  camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+  const initialFov = window.innerWidth < 768 ? 120 : 45;
+  camera = new THREE.PerspectiveCamera(initialFov, window.innerWidth / window.innerHeight, 0.1, 100);
   camera.position.set(0.0, 3.0, 8.0);
   camera.lookAt(0.00, -0.42, -1.40);
 
@@ -997,6 +998,7 @@ function animate() {
 
 // ===== RESIZE =====
 function onResize() {
+  camera.fov = window.innerWidth < 768 ? 120 : 45;
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);

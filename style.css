@@ -42,6 +42,7 @@ html {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 body {
@@ -182,7 +183,7 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
 #three-canvas {
   position: fixed;
   top: 0; left: 0;
-  width: 100vw;
+  width: 100%;
   height: 100vh;
   z-index: 1;
   pointer-events: none;
@@ -674,7 +675,7 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
   .nav-links { display: none; }
   .nav-toggle { display: flex; }
 
-  #about { flex-direction: column; }
+  #about { flex-direction: column; text-align: center; }
   .about-visual { min-height: 250px; }
 
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
@@ -687,6 +688,12 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
 
 @media (max-width: 600px) {
   .stats-grid { grid-template-columns: 1fr 1fr; gap: 24px; }
+  
+  /* Center feature cards on mobile */
+  .feature-card { text-align: center; }
+  .feature-icon { margin-left: auto; margin-right: auto; }
+
+  /* Adjust steps for centered look or keep left-aligned? We'll leave steps left-aligned since they have a line, but center the CTA */
   .steps::before { left: 20px; }
   .step-number { width: 40px; height: 40px; font-size: 1rem; }
   .cta-buttons { flex-direction: column; align-items: center; }
