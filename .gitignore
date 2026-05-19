@@ -3,3 +3,8 @@ node_modules/
 Thumbs.db
 *.log
 
+# Unused source STL files (replaced by pre-computed wireframe OBJs)
+3d assets/tree.stl
+3d assets/LowPolyTree.stl
+3d assets/LowPolyBass.stl
+

@@ -1,5 +1,5 @@
 /* ============================================
-   VIMICX — Design System & Styles
+   VIMICX â€” Design System & Styles
    ============================================ */
 
 /* ---------- CSS Custom Properties ---------- */
@@ -518,6 +518,9 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
   transition: var(--transition);
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .team-card::after {
@@ -561,7 +564,7 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
 
 .team-card h3 { margin-bottom: 4px; font-size: 1.15rem; color: #fff; }
 .team-card .role { color: var(--cyan); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
-.team-card .bio { color: var(--text-secondary); font-size: 0.88rem; line-height: 1.65; }
+.team-card .bio { color: var(--text-secondary); font-size: 0.88rem; line-height: 1.65; margin-top: auto; }
 
 /* ---------- CTA Section ---------- */
 #cta {
@@ -700,7 +703,7 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
 }
 
 /* ============================================
-   SCREEN EDITOR STYLES
+   DEV EDITOR STYLES (shared + per-editor)
    ============================================ */
 
 /* Enable pointer events on canvas when in editor mode */
@@ -709,27 +712,45 @@ body.editor-active #three-canvas {
   z-index: 9000;
 }
 
-/* Toggle button — hidden by default, uncomment display to re-enable */
-
-
-
-/* Editor panel — left side overlay */
-#screen-editor {
+/* --- Shared editor panel base --- */
+#screen-editor,
+#camera-editor,
+#bass-editor,
+#tree-editor,
+#boat-editor,
+#scene-editor,
+#water-editor {
   position: fixed;
   top: 0;
-  left: 0;
-  width: 320px;
+  width: 300px;
   height: 100vh;
   z-index: 10001;
-  background: rgba(6, 6, 18, 0.92);
+  background: rgba(30, 30, 30, 0.92);
   backdrop-filter: blur(24px);
-  border-right: 1px solid var(--glass-border);
+  border-left: 1px solid var(--glass-border);
   flex-direction: column;
   overflow-y: auto;
   padding: 0;
   font-family: var(--font-body);
+  box-shadow: -4px 0 40px rgba(0, 0, 0, 0.6);
+  right: 0;
+}
+
+/* Screen editor overrides (left side, wider, different bg) */
+#screen-editor {
+  left: 0;
+  right: auto;
+  width: 320px;
+  background: rgba(6, 6, 18, 0.92);
+  border-left: none;
+  border-right: 1px solid var(--glass-border);
   box-shadow: 4px 0 40px rgba(0, 0, 0, 0.6);
 }
+
+/* Wider panels */
+#scene-editor,
+#bass-editor,
+#water-editor { width: 320px; }
 
 .editor-header {
   display: flex;
@@ -997,30 +1018,8 @@ body.editor-active #three-canvas {
 }
 
 /* ============================================
-   CAMERA EDITOR STYLES
+   CAMERA-SPECIFIC STYLES
    ============================================ */
-
-/* Toggle button — bottom left */
-
-
-
-/* Camera editor panel — right side overlay */
-#camera-editor {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 300px;
-  height: 100vh;
-  z-index: 10001;
-  background: rgba(30, 30, 30, 0.92);
-  backdrop-filter: blur(24px);
-  border-left: 1px solid var(--glass-border);
-  flex-direction: column;
-  overflow-y: auto;
-  padding: 0;
-  font-family: var(--font-body);
-  box-shadow: -4px 0 40px rgba(0, 0, 0, 0.6);
-}
 
 /* Live control toggle row */
 .camera-live-row {
@@ -1064,7 +1063,7 @@ body.editor-active #three-canvas {
   box-shadow: 0 0 12px rgba(12, 154, 161, 0.2);
 }
 
-/* Section group labels (Position / Look At) */
+/* Section group labels (Position / Look At / Scale) */
 .editor-group-label {
   font-size: 0.68rem;
   font-weight: 700;
@@ -1075,94 +1074,17 @@ body.editor-active #three-canvas {
   margin-top: 4px;
 }
 
-/* Log output for camera editor */
-#camera-log-output {
-  margin: 8px 20px 20px;
-  padding: 12px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 8px;
-  color: var(--green);
-  font-size: 0.7rem;
-  line-height: 1.5;
-  max-height: 250px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-break: break-all;
-  font-family: 'Courier New', monospace;
-}
-
 /* ============================================
-   BASS EDITOR STYLES
+   SHARED LOG OUTPUT STYLES
    ============================================ */
-
-/* Toggle button — bottom center-left */
-
-
-
-/* Bass editor panel — uses same overlay style as camera editor */
-#bass-editor {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 300px;
-  height: 100vh;
-  z-index: 10001;
-  background: rgba(30, 30, 30, 0.92);
-  backdrop-filter: blur(24px);
-  border-left: 1px solid var(--glass-border);
-  flex-direction: column;
-  overflow-y: auto;
-  padding: 0;
-  font-family: var(--font-body);
-  box-shadow: -4px 0 40px rgba(0, 0, 0, 0.6);
-}
-
-/* Log output for bass editor */
-#bass-log-output {
-  margin: 8px 20px 20px;
-  padding: 12px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 8px;
-  color: var(--green);
-  font-size: 0.7rem;
-  line-height: 1.5;
-  max-height: 250px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-break: break-all;
-  font-family: 'Courier New', monospace;
-}
-
-/* ============================================
-   TREE EDITOR STYLES
-   ============================================ */
-
-/* Toggle button — bottom center */
-
-
-
-/* Tree editor panel */
-#tree-editor {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 300px;
-  height: 100vh;
-  z-index: 10001;
-  background: rgba(30, 30, 30, 0.92);
-  backdrop-filter: blur(24px);
-  border-left: 1px solid var(--glass-border);
-  flex-direction: column;
-  overflow-y: auto;
-  padding: 0;
-  font-family: var(--font-body);
-  box-shadow: -4px 0 40px rgba(0, 0, 0, 0.6);
-}
-
-/* Log output for tree editor */
-#tree-log-output {
+#editor-log-output,
+#camera-log-output,
+#bass-log-output,
+#tree-log-output,
+#boat-log-output,
+#scene-log-output,
+#water-log-output,
+#screen-log-output {
   margin: 8px 20px 20px;
   padding: 12px;
   background: rgba(0, 0, 0, 0.5);
@@ -1200,319 +1122,6 @@ body.editor-active #three-canvas {
 .editor-group input[type="color"]::-moz-color-swatch {
   border-radius: 4px;
   border: none;
-}
-
-/* ============================================
-   BOAT EDITOR STYLES
-   ============================================ */
-
-/* Toggle button — bottom center */
-
-
-
-/* Boat editor panel */
-#boat-editor {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 300px;
-  height: 100vh;
-  z-index: 10001;
-  background: rgba(30, 30, 30, 0.92);
-  backdrop-filter: blur(24px);
-  border-left: 1px solid var(--glass-border);
-  flex-direction: column;
-  overflow-y: auto;
-  padding: 0;
-  font-family: var(--font-body);
-  box-shadow: -4px 0 40px rgba(0, 0, 0, 0.6);
-}
-
-/* Log output for boat editor */
-#boat-log-output {
-  margin: 8px 20px 20px;
-  padding: 12px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 8px;
-  color: var(--green);
-  font-size: 0.7rem;
-  line-height: 1.5;
-  max-height: 250px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-break: break-all;
-  font-family: 'Courier New', monospace;
-}
-
-/* ============================================
-   SCENE EDITOR STYLES
-   ============================================ */
-
-/* Toggle button — bottom right */
-
-
-
-/* Scene editor panel */
-#scene-editor {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 320px;
-  height: 100vh;
-  z-index: 10001;
-  background: rgba(30, 30, 30, 0.92);
-  backdrop-filter: blur(24px);
-  border-left: 1px solid var(--glass-border);
-  flex-direction: column;
-  overflow-y: auto;
-  padding: 0;
-  font-family: var(--font-body);
-  box-shadow: -4px 0 40px rgba(0, 0, 0, 0.6);
-}
-
-/* Log output for scene editor */
-#scene-log-output {
-  margin: 8px 20px 20px;
-  padding: 12px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 8px;
-  background: rgba(12, 154, 161, 0.15);
-  border: 1px solid var(--cyan);
-  border-radius: 100px;
-  color: var(--cyan);
-  font-family: var(--font-body);
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  backdrop-filter: blur(12px);
-  transition: var(--transition);
-  letter-spacing: 0.5px;
-}
-
-
-/* Tree editor panel */
-#tree-editor {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 300px;
-  height: 100vh;
-  z-index: 10001;
-  background: rgba(30, 30, 30, 0.92);
-  backdrop-filter: blur(24px);
-  border-left: 1px solid var(--glass-border);
-  flex-direction: column;
-  overflow-y: auto;
-  padding: 0;
-  font-family: var(--font-body);
-  box-shadow: -4px 0 40px rgba(0, 0, 0, 0.6);
-}
-
-/* Log output for tree editor */
-#tree-log-output {
-  margin: 8px 20px 20px;
-  padding: 12px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 8px;
-  color: var(--green);
-  font-size: 0.7rem;
-  line-height: 1.5;
-  max-height: 250px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-break: break-all;
-  font-family: 'Courier New', monospace;
-}
-
-/* ============================================
-   COLOR PICKER STYLES
-   ============================================ */
-.editor-group input[type="color"] {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  background-color: transparent;
-  width: 100%;
-  height: 32px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  cursor: pointer;
-  margin-top: 4px;
-}
-.editor-group input[type="color"]::-webkit-color-swatch {
-  border-radius: 4px;
-  border: none;
-}
-.editor-group input[type="color"]::-moz-color-swatch {
-  border-radius: 4px;
-  border: none;
-}
-
-/* ============================================
-   BOAT EDITOR STYLES
-   ============================================ */
-
-/* Toggle button — bottom center */
-
-
-
-/* Boat editor panel */
-#boat-editor {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 300px;
-  height: 100vh;
-  z-index: 10001;
-  background: rgba(30, 30, 30, 0.92);
-  backdrop-filter: blur(24px);
-  border-left: 1px solid var(--glass-border);
-  flex-direction: column;
-  overflow-y: auto;
-  padding: 0;
-  font-family: var(--font-body);
-  box-shadow: -4px 0 40px rgba(0, 0, 0, 0.6);
-}
-
-/* Log output for boat editor */
-#boat-log-output {
-  margin: 8px 20px 20px;
-  padding: 12px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 8px;
-  color: var(--green);
-  font-size: 0.7rem;
-  line-height: 1.5;
-  max-height: 250px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-break: break-all;
-  font-family: 'Courier New', monospace;
-}
-
-/* ============================================
-   SCENE EDITOR STYLES
-   ============================================ */
-
-/* Toggle button — bottom right */
-
-
-
-/* Scene editor panel */
-#scene-editor {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 320px;
-  height: 100vh;
-  z-index: 10001;
-  background: rgba(30, 30, 30, 0.92);
-  backdrop-filter: blur(24px);
-  border-left: 1px solid var(--glass-border);
-  flex-direction: column;
-  overflow-y: auto;
-  padding: 0;
-  font-family: var(--font-body);
-  box-shadow: -4px 0 40px rgba(0, 0, 0, 0.6);
-}
-
-/* Log output for scene editor */
-#scene-log-output {
-  margin: 8px 20px 20px;
-  padding: 12px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 8px;
-  color: var(--green);
-  font-size: 0.7rem;
-  line-height: 1.5;
-  max-height: 250px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-break: break-all;
-  font-family: 'Courier New', monospace;
-}
-
-/* ============================================
-   BASS EDITOR STYLES
-   ============================================ */
-
-/* Bass editor panel */
-#bass-editor {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 320px;
-  height: 100vh;
-  z-index: 10001;
-  background: rgba(30, 30, 30, 0.92);
-  backdrop-filter: blur(24px);
-  border-left: 1px solid var(--glass-border);
-  flex-direction: column;
-  overflow-y: auto;
-  padding: 0;
-  font-family: var(--font-body);
-  box-shadow: -4px 0 40px rgba(0, 0, 0, 0.6);
-}
-
-/* Log output for bass editor */
-#bass-log-output {
-  margin: 8px 20px 20px;
-  padding: 12px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 8px;
-  color: var(--green);
-  font-size: 0.7rem;
-  line-height: 1.5;
-  max-height: 250px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-break: break-all;
-  font-family: 'Courier New', monospace;
-}
-
-/* ============================================
-   WATER EDITOR STYLES
-   ============================================ */
-
-/* Water editor panel */
-#water-editor {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 320px;
-  height: 100vh;
-  z-index: 10001;
-  background: rgba(30, 30, 30, 0.92);
-  backdrop-filter: blur(24px);
-  border-left: 1px solid var(--glass-border);
-  flex-direction: column;
-  overflow-y: auto;
-  padding: 0;
-  font-family: var(--font-body);
-  box-shadow: -4px 0 40px rgba(0, 0, 0, 0.6);
-}
-
-/* Log output for water editor */
-#water-log-output {
-  margin: 8px 20px 20px;
-  padding: 12px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 8px;
-  color: var(--green);
-  font-size: 0.7rem;
-  line-height: 1.5;
-  max-height: 250px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-break: break-all;
-  font-family: 'Courier New', monospace;
 }
 
 /* ============================================
@@ -1586,3 +1195,4 @@ body.editor-active #three-canvas {
   background: rgba(255, 255, 255, 0.05);
   color: var(--text-light);
 }
+

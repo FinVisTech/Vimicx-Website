@@ -464,39 +464,7 @@ function buildWater() {
   terrainEdges.name = 'terrain_edges';
   terrainAnchor.add(terrainEdges);
 
-  terrainContours = new THREE.Group();
-  terrainContours.position.copy(terrainMesh.position);
-  terrainContours.name = 'terrain_contours';
-
-  const contourLevels = [-0.8, -0.4, 0.0, 0.3, 0.6];
-  const contourColors = [0x032828, 0x053a3a, 0x0C9AA1, 0x4dcbcf, 0x7DFDFE];
-
-  contourLevels.forEach((level, ci) => {
-    const points = [];
-    const step = 0.3;
-    for (let x = -sizeX / 2; x < sizeX / 2; x += step) {
-      for (let z = -sizeZ / 2 * 0.8; z < sizeZ / 2 * 0.8; z += step) {
-        const h = terrainHeight(x, z);
-        const hR = terrainHeight(x + step, z);
-        const hD = terrainHeight(x, z + step);
-        if ((h - level) * (hR - level) < 0 || (h - level) * (hD - level) < 0) {
-          points.push(new THREE.Vector3(x, level, z));
-        }
-      }
-    }
-
-    if (points.length > 0) {
-      const contourGeo = new THREE.BufferGeometry().setFromPoints(points);
-      const contourMat = new THREE.PointsMaterial({
-        color: contourColors[ci], size: 0.04, transparent: true, opacity: 0
-      });
-      const contourPts = new THREE.Points(contourGeo, contourMat);
-      terrainContours.add(contourPts);
-    }
-  });
-
-  terrainContours.visible = false; // disabled — dots look like visual noise
-  terrainAnchor.add(terrainContours);
+  // Terrain contours removed — permanently disabled, generated ~2000 points for no visual effect
 }
 
 // ===== PARTICLES =====
@@ -525,7 +493,11 @@ function drawAboutCanvas() {
   const ctx = c.getContext('2d');
   c.width = 500; c.height = 400;
 
+  let aboutAnimating = false;
+  let aboutRafId = null;
+
   function draw() {
+    if (!aboutAnimating) return;
     ctx.clearRect(0, 0, 500, 400);
     ctx.strokeStyle = 'rgba(12, 154, 161, 0.15)';
     ctx.lineWidth = 1;
@@ -555,9 +527,22 @@ function drawAboutCanvas() {
         }
       }
     }
-    requestAnimationFrame(draw);
+    aboutRafId = requestAnimationFrame(draw);
   }
-  draw();
+
+  // Only animate when the about section is visible on screen
+  const aboutObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        aboutAnimating = true;
+        draw();
+      } else {
+        aboutAnimating = false;
+        if (aboutRafId) cancelAnimationFrame(aboutRafId);
+      }
+    });
+  }, { threshold: 0.01 });
+  aboutObserver.observe(c.parentElement || c);
 }
 
 // ===== SCROLL ANIMATIONS =====
@@ -692,6 +677,17 @@ function setupNav() {
   if (toggle) {
     toggle.addEventListener('click', () => {
       links.style.display = links.style.display === 'flex' ? 'none' : 'flex';
+    });
+  }
+
+  // Auto-close mobile nav when a link is clicked
+  if (links) {
+    links.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 900) {
+          links.style.display = 'none';
+        }
+      });
     });
   }
 }
@@ -843,33 +839,37 @@ function updateScene() {
 
   // ---- Wind-driven lake water ripples (freeze when camera editor active) ----
   if (waterGeo && waterPlane && !window.cameraEditorActive) {
-    const wPos = waterGeo.attributes.position;
-    const baseY = waterGeo.userData.baseY;
-
-    for (let i = 0; i < wPos.count; i++) {
-      const x = wPos.getX(i);
-      const z = wPos.getZ(i);
-
-      // Shared wave height
-      let h = getWaveHeight(x, z, t);
-
-      // Boat wake — water-only effect (concentric + V-wake)
-      const dist = Math.sqrt(x * x + z * z);
-      h += Math.sin(dist * 2.5 - t * 2.8) * 0.035 * Math.exp(-dist * 0.18);
-      if (x < 0) {
-        const wake = Math.exp(-Math.abs(z - x * 0.3) * 2.0) * Math.exp(x * 0.3);
-        h += Math.sin(x * 3.0 - t * 3.0) * 0.045 * wake;
-      }
-
-      wPos.setY(i, baseY[i] + h);
-    }
-    wPos.needsUpdate = true;
-    waterGeo.computeVertexNormals();
-    // Water opacity follows animState, unless overriden by Dev Tools
+    // Update visibility first — skip expensive vertex work when water is hidden
     if (!window.waterEditorActive) {
       waterPlane.material.opacity = animState.waterOpacity * 0.95;
     }
     waterPlane.visible = animState.waterOpacity > 0.01 || window.waterEditorActive;
+
+    // Only animate vertices when water is actually visible
+    if (waterPlane.visible) {
+      const wPos = waterGeo.attributes.position;
+      const baseY = waterGeo.userData.baseY;
+
+      for (let i = 0; i < wPos.count; i++) {
+        const x = wPos.getX(i);
+        const z = wPos.getZ(i);
+
+        // Shared wave height
+        let h = getWaveHeight(x, z, t);
+
+        // Boat wake — water-only effect (concentric + V-wake)
+        const dist = Math.sqrt(x * x + z * z);
+        h += Math.sin(dist * 2.5 - t * 2.8) * 0.035 * Math.exp(-dist * 0.18);
+        if (x < 0) {
+          const wake = Math.exp(-Math.abs(z - x * 0.3) * 2.0) * Math.exp(x * 0.3);
+          h += Math.sin(x * 3.0 - t * 3.0) * 0.045 * wake;
+        }
+
+        wPos.setY(i, baseY[i] + h);
+      }
+      wPos.needsUpdate = true;
+      waterGeo.computeVertexNormals();
+    }
   }
 
   // Terrain wiremesh topology — revealed after screens disappear and water fades
@@ -964,7 +964,7 @@ function onResize() {
 // No CPU pixel readback — everything runs on the GPU for maximum performance.
 
 let dotGridScene, dotGridQuad;
-let maskOverrideMat, maskOverrideLineMat, maskOverridePointMat;
+let maskOverrideMat, maskOverrideLineMat, maskOverridePointMat, maskInvisibleMat;
 
 function setupDotGridMask() {
   // Create a low-res render target for the mask
@@ -974,10 +974,11 @@ function setupDotGridMask() {
     Math.floor(window.innerHeight * pr * 0.5)
   );
 
-  // Pre-create override materials for the mask pass
+  // Pre-create override materials for the mask pass (reused every frame)
   maskOverrideMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
   maskOverrideLineMat = new THREE.LineBasicMaterial({ color: 0xffffff });
   maskOverridePointMat = new THREE.PointsMaterial({ color: 0xffffff, size: 3 });
+  maskInvisibleMat = new THREE.MeshBasicMaterial({ visible: false });
 
   // Create dot grid shader material
   const dotGridMaterial = new THREE.ShaderMaterial({
@@ -1069,7 +1070,6 @@ function renderDotGridOverlay() {
   scene.fog = null;
 
   const overrides = [];
-  const hiddenMats = [];
 
   scene.traverse(function (obj) {
     if (!obj.visible) return;
@@ -1105,10 +1105,8 @@ function renderDotGridOverlay() {
           obj.material = maskOverrideMat;
         }
       } else {
-        // Create a temporary invisible material
-        const invisMat = new THREE.MeshBasicMaterial({ visible: false });
-        obj.material = invisMat;
-        hiddenMats.push(invisMat);
+        // Reuse pre-created invisible material (no per-frame allocation)
+        obj.material = maskInvisibleMat;
       }
     }
   });
@@ -1129,8 +1127,7 @@ function renderDotGridOverlay() {
   });
   scene.fog = origFog;
 
-  // Dispose temporary invisible materials
-  hiddenMats.forEach(function (m) { m.dispose(); });
+
 
   // --- DOT GRID PASS: render the shader quad using the mask ---
   // Use a simple orthographic camera for the full-screen quad

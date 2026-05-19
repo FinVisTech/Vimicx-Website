@@ -8,12 +8,49 @@
   <meta name="description"
     content="Vimicx creates live 3D models displayed in AR glasses, transforming hard-to-interpret data into spatial understanding you can see, touch, and act on.">
   <meta name="keywords" content="AR, augmented reality, 3D visualization, live data, AR glasses, spatial computing">
+  <meta name="theme-color" content="#1E1E1E">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Vimicx — Live 3D Data Visualization in AR">
+  <meta property="og:description" content="Live 3D models in AR glasses — transforming complex data into spatial understanding you can see and act on.">
+  <meta property="og:url" content="https://vimicx.com">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Vimicx — Live 3D Data Visualization in AR">
+  <meta name="twitter:description" content="Live 3D models in AR glasses — transforming complex data into spatial understanding you can see and act on.">
+
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Vimicx",
+    "url": "https://vimicx.com",
+    "description": "Vimicx creates live 3D models displayed in AR glasses, transforming hard-to-interpret data into spatial understanding."
+  }
+  </script>
+
+  <!-- Preconnect & Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@300;400;500;600;700;800;900&display=swap"
     rel="stylesheet">
+
+  <!-- Preload critical 3D assets -->
+  <link rel="preload" href="3d assets/bass_boat.stl" as="fetch" crossorigin>
+  <link rel="preload" href="3d assets/bass_wireframe.obj" as="fetch" crossorigin>
+
   <link rel="stylesheet" href="style.css">
+
+  <!-- No-JS fallback for SEO crawlers -->
+  <noscript>
+    <style>#three-canvas { display: none; }</style>
+  </noscript>
 </head>
 
 <body>
@@ -216,7 +253,7 @@
       <div class="team-grid">
         <div class="team-card reveal" id="team-ceo">
           <div class="team-photo">
-            <img src="img/ceo.webp" alt="CEO placeholder" id="ceo-photo">
+            <img src="img/ceo.webp" alt="Alex Morgan - CEO of Vimicx" id="ceo-photo" width="120" height="120" loading="lazy" decoding="async">
           </div>
           <h3>Alex Morgan</h3>
           <div class="role">Chief Executive Officer</div>
@@ -225,7 +262,7 @@
         </div>
         <div class="team-card reveal" id="team-cto">
           <div class="team-photo">
-            <img src="img/cto.webp" alt="CTO placeholder" id="cto-photo">
+            <img src="img/cto.webp" alt="Jordan Chen - CTO of Vimicx" id="cto-photo" width="120" height="120" loading="lazy" decoding="async">
           </div>
           <h3>Jordan Chen</h3>
           <div class="role">Chief Technology Officer</div>
@@ -234,7 +271,7 @@
         </div>
         <div class="team-card reveal" id="team-board">
           <div class="team-photo">
-            <img src="img/board.webp" alt="Board Member placeholder" id="board-photo">
+            <img src="img/board.webp" alt="Sam Rivera - Board Member at Vimicx" id="board-photo" width="120" height="120" loading="lazy" decoding="async">
           </div>
           <h3>Sam Rivera</h3>
           <div class="role">Board Member</div>
@@ -283,9 +320,9 @@
           <div>
             <h4>Connect</h4>
             <ul>
-              <li><a href="#">Twitter / X</a></li>
-              <li><a href="#">LinkedIn</a></li>
-              <li><a href="#">Contact</a></li>
+              <li><a href="#" target="_blank" rel="noopener noreferrer">Twitter / X</a></li>
+              <li><a href="#" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+              <li><a href="#" target="_blank" rel="noopener noreferrer">Contact</a></li>
             </ul>
           </div>
         </div>
@@ -747,15 +784,15 @@
     </div>
   </div>
 
-  <!-- ===== Scripts ===== -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-  <script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
-  <script src="main.js"></script>
+  <!-- ===== Scripts (defer = non-blocking, preserves order) ===== -->
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script defer src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
+  <script defer src="main.js"></script>
   
   <script>
     // Dev Mode Check: Only load dev tools if "?dev" is in the URL
