@@ -281,16 +281,21 @@
       </div>
     </section>
 
-    <!-- ===== CTA ===== -->
+    <!-- ===== CTA / Mailing List ===== -->
     <section id="cta">
       <span class="label reveal">Join Us</span>
       <h2 class="reveal">Ready to See the <span class="gradient-text">Unseen</span>?</h2>
-      <p class="reveal">Be among the first to experience spatial data intelligence. Request early access or get in touch
-        with our team.</p>
-      <div class="cta-buttons reveal">
-        <a href="#" class="btn-primary btn-large" id="cta-access-btn">Request Early Access</a>
-        <a href="#" class="btn-secondary btn-large" id="cta-contact-btn">Contact Us</a>
-      </div>
+      <p class="reveal">Be among the first to experience spatial data intelligence. Join our mailing list for updates and early access.</p>
+      <form id="mailing-list-form" class="cta-form reveal" autocomplete="on">
+        <div class="form-row">
+          <input type="text" id="mailing-name" name="name" placeholder="Name (optional)" autocomplete="name" aria-label="Your name (optional)">
+          <input type="email" id="mailing-email" name="email" placeholder="Enter your email" required autocomplete="email" aria-label="Email address">
+          <button type="submit" class="btn-primary btn-large" id="mailing-submit-btn">
+            Join Email List
+          </button>
+        </div>
+        <p id="mailing-status" class="form-status" aria-live="polite"></p>
+      </form>
     </section>
 
     <!-- ===== Footer ===== -->
@@ -793,6 +798,7 @@
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
   <script defer src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
   <script defer src="main.js"></script>
+  <script defer src="supabase.js"></script>
   
   <script>
     // Dev Mode Check: Only load dev tools if "?dev" is in the URL
