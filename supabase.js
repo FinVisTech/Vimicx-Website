@@ -6,6 +6,15 @@
 
   const EDGE_FN_URL = 'https://mndumzkkhdtggcgmddbv.supabase.co/functions/v1/subscribe';
 
+  // Determine environment source based on hostname
+  function getSource() {
+    var host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1' || host.includes('dev') || host.includes('preview')) {
+      return 'website-dev';
+    }
+    return 'website-prod';
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('mailing-list-form');
     if (!form) return;
@@ -36,7 +45,7 @@
         const res = await fetch(EDGE_FN_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, name: name || undefined }),
+          body: JSON.stringify({ email, name: name || undefined, source: getSource() }),
         });
 
         const data = await res.json();
