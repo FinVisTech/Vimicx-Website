@@ -278,7 +278,7 @@ function buildWireframeClones() {
   // The boat remains solid throughout the entire animation.
 }
 
-// ===== FISH (Low Poly Bass STL — replaces procedural fish) =====
+// ===== FISH (Low Poly Bass — Loaded as Pre-computed Wireframe OBJ) =====
 function buildFish() {
   const DEG2RAD = Math.PI / 180;
   bassModels = [];
@@ -303,110 +303,33 @@ function buildFish() {
     bassModels.push(group);
   });
 
-
-
-  // Load the LowPolyBass STL
-  const loader = new THREE.STLLoader();
-  loader.load('3d assets/LowPolyBass.stl', function (geometry) {
-    // --- Orientation fix: STL is Z-up, Three.js is Y-up ---
-    geometry.rotateX(-Math.PI / 2);
-
-    // Center the geometry
-    geometry.computeBoundingBox();
-    const box = geometry.boundingBox;
-    const center = new THREE.Vector3();
-    box.getCenter(center);
-    geometry.translate(-center.x, -center.y, -center.z);
-
-    // Scale to fit (~3.5 units)
-    geometry.computeBoundingBox();
-    const size = new THREE.Vector3();
-    geometry.boundingBox.getSize(size);
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const targetSize = 3.5;
-    const scaleFactor = targetSize / maxDim;
-    geometry.scale(scaleFactor, scaleFactor, scaleFactor);
-
-    geometry.computeVertexNormals();
-    geometry.computeBoundingBox();
-
-    console.log('LowPolyBass loaded, size:', size.multiplyScalar(scaleFactor));
-
-    // Decimate via vertex clustering — snap vertices to a 3D grid,
-    // rebuild connected triangles, then draw wireframe edges.
-    // This produces a proper connected mesh wireframe (not scattered points).
-    const pos = geometry.attributes.position;
-    const gridSize = 0.14; // larger = fewer edges, more low-poly look
-    const vertexMap = new Map();
-    const newPositions = [];
-    const newIndices = [];
-    let newVertexCount = 0;
-    const vertexRemap = new Int32Array(pos.count);
-
-    for (let i = 0; i < pos.count; i++) {
-      const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
-      const gx = Math.round(x / gridSize);
-      const gy = Math.round(y / gridSize);
-      const gz = Math.round(z / gridSize);
-      const key = gx + ',' + gy + ',' + gz;
-
-      if (!vertexMap.has(key)) {
-        vertexMap.set(key, newVertexCount);
-        // Use snapped grid position for cleaner mesh
-        newPositions.push(gx * gridSize, gy * gridSize, gz * gridSize);
-        newVertexCount++;
+  // Load the pre-computed bass wireframe OBJ (replaces runtime STL decimation)
+  const loader = new THREE.OBJLoader();
+  loader.load('3d assets/bass_wireframe.obj', function (object) {
+    // OBJLoader returns a Group containing line segments
+    object.traverse(function (child) {
+      if (child.isLineSegments || child.isLine) {
+        // Apply to each bass model group with its own color
+        bassModels.forEach((group, index) => {
+          const clonedLines = child.clone();
+          clonedLines.material = new THREE.LineBasicMaterial({
+            color: group.userData.color,
+            transparent: true,
+            opacity: 0
+          });
+          clonedLines.name = 'bass_wireframe_' + index;
+          group.add(clonedLines);
+        });
       }
-      vertexRemap[i] = vertexMap.get(key);
-    }
-
-    // Rebuild faces — skip degenerate triangles where vertices collapsed
-    const faceCount = pos.count / 3;
-    const edgeSet = new Set(); // deduplicate shared edges
-    const edgePoints = [];
-
-    for (let f = 0; f < faceCount; f++) {
-      const a = vertexRemap[f * 3];
-      const b = vertexRemap[f * 3 + 1];
-      const c = vertexRemap[f * 3 + 2];
-      if (a === b || b === c || a === c) continue; // degenerate
-
-      // Add each edge (deduplicated)
-      const edges = [[a, b], [b, c], [c, a]];
-      edges.forEach(([v0, v1]) => {
-        const eKey = Math.min(v0, v1) + ':' + Math.max(v0, v1);
-        if (!edgeSet.has(eKey)) {
-          edgeSet.add(eKey);
-          const i0 = v0 * 3, i1 = v1 * 3;
-          edgePoints.push(
-            newPositions[i0], newPositions[i0 + 1], newPositions[i0 + 2],
-            newPositions[i1], newPositions[i1 + 1], newPositions[i1 + 2]
-          );
-        }
-      });
-    }
-
-    console.log('Bass wireframe: ' + edgeSet.size + ' edges from ' + newVertexCount + ' vertices');
-
-    const wireGeo = new THREE.BufferGeometry();
-    wireGeo.setAttribute('position', new THREE.Float32BufferAttribute(edgePoints, 3));
-
-    bassModels.forEach((group, index) => {
-      // Clone the geometry and material for independent editing later
-      const clonedMat = new THREE.LineBasicMaterial({
-        color: group.userData.color,
-        transparent: true,
-        opacity: 0
-      });
-      const clonedLines = new THREE.LineSegments(wireGeo, clonedMat);
-      clonedLines.name = 'bass_wireframe_' + index;
-      group.add(clonedLines);
     });
+
+    console.log('Bass wireframe OBJ loaded');
   },
     function (xhr) {
-      console.log('LowPolyBass STL: ' + (xhr.loaded / xhr.total * 100).toFixed(0) + '% loaded');
+      console.log('Bass Wireframe OBJ: ' + (xhr.loaded / xhr.total * 100).toFixed(0) + '% loaded');
     },
     function (error) {
-      console.error('Error loading LowPolyBass STL:', error);
+      console.error('Error loading Bass Wireframe OBJ:', error);
     });
 }
 
@@ -701,20 +624,19 @@ function setupScrollAnimations() {
   // Smoothly steer the boat toward BOAT_TARGET_YAW (shortest arc, handled in updateScene)
   tl.to(animState, { boatAlignToTarget: 1, duration: 0.18, ease: 'power3.inOut' }, 0.30);
 
-  // Lock camera to boat — starts after alignment is well underway
-  tl.to(animState, { cameraLockedToBoat: 1, duration: 0.15, ease: 'power2.inOut' }, 0.44);
+  // Lock camera to boat — starts earlier so it finishes before fish/tree appear
+  tl.to(animState, { cameraLockedToBoat: 1, duration: 0.15, ease: 'power2.inOut' }, 0.36);
 
-  // Phase 3: Fish reveal — moved earlier to reduce dead scrolling
-  tl.to(animState, { fishVisibility: 1, duration: 0.15 }, 0.55)
-    .to(animState, { cameraY: 2.4, duration: 0.12 }, 0.59)
-    .to(animState, { scanLinePos: 3, duration: 0.12 }, 0.61);
+  // Phase 3: Fish reveal — delayed until camera is fully settled on boat
+  tl.to(animState, { fishVisibility: 1, duration: 0.12 }, 0.60)
+    .to(animState, { scanLinePos: 3, duration: 0.12 }, 0.65);
 
   // Show fish text ("See what others can't")
-  tl.to('#t-text-3', { opacity: 1, duration: 0.06 }, 0.59)
+  tl.to('#t-text-3', { opacity: 1, duration: 0.06 }, 0.63)
     .to('#t-text-3', { opacity: 0, duration: 0.06 }, 0.80);
 
   // Phase 4: Tree reveal (same timing as fish)
-  tl.to(animState, { treeVisibility: 1, duration: 0.15 }, 0.55);
+  tl.to(animState, { treeVisibility: 1, duration: 0.12 }, 0.60);
 
   // Phase 5: Staggered fade-out — tree first, then bass, then terrain, then canvas
   // Tree fades away first (80-88%)
@@ -828,11 +750,9 @@ function updateScene() {
         animState.boatRotY += 0.001 * animState.boatRotSpeed;
       }
 
-      // Smooth shortest-path alignment toward cinematic target yaw
-      // Buffer the scroll-driven value through a per-frame lerp to kill jitter
-      if (!updateScene._smoothAlign) updateScene._smoothAlign = 0;
-      updateScene._smoothAlign += (animState.boatAlignToTarget - updateScene._smoothAlign) * 0.05;
-      const align = updateScene._smoothAlign;
+      // Shortest-path alignment toward cinematic target yaw
+      // Uses GSAP-driven value directly — no per-frame lerp to avoid drift
+      const align = animState.boatAlignToTarget;
 
       if (align > 0.001) {
         // Normalize current yaw into [-PI, PI] range
@@ -845,8 +765,8 @@ function updateScene() {
         if (delta > Math.PI) delta -= Math.PI * 2;
         if (delta < -Math.PI) delta += Math.PI * 2;
 
-        // Steer toward target — blend strength increases with smoothed align factor
-        animState.boatRotY += delta * align * 0.04;
+        // Steer toward target — blend strength follows GSAP alignment factor
+        animState.boatRotY += delta * align * 0.06;
       }
 
       boatGroup.rotation.y = animState.boatRotY + Math.sin(t * 0.3) * 0.015 * animState.boatRotSpeed;
@@ -864,12 +784,9 @@ function updateScene() {
 
     // Camera (skip when camera editor has live control)
     if (!window.cameraEditorActive) {
-      // Smooth the lock factor through a per-frame lerp to decouple from scroll jitter
-      if (!updateScene._smoothLockCam) updateScene._smoothLockCam = 0;
-      updateScene._smoothLockCam += (animState.cameraLockedToBoat - updateScene._smoothLockCam) * 0.045;
-      const lockCam = updateScene._smoothLockCam;
+      const lockCam = animState.cameraLockedToBoat;
 
-      // Smoothed lookAt target (persists across frames to prevent snap)
+      // Persistent lookAt vector (avoids allocating every frame)
       if (!updateScene._smoothLookAt) {
         updateScene._smoothLookAt = new THREE.Vector3(animState.lookAtX, animState.lookAtY, animState.lookAtZ);
       }
@@ -886,31 +803,27 @@ function updateScene() {
         const targetY = freeY * (1 - lockCam) + worldCamPos.y * lockCam;
         const targetZ = freeZ * (1 - lockCam) + worldCamPos.z * lockCam;
 
-        // Smooth camera position blend
-        const camLerp = 0.04;
+        // Minimal smoothing for boat-locked mode (dampens wave bob jitter only)
+        const camLerp = 0.5;
         camera.position.x += (targetX - camera.position.x) * camLerp;
         camera.position.y += (targetY - camera.position.y) * camLerp;
         camera.position.z += (targetZ - camera.position.z) * camLerp;
 
-        // Smooth lookAt blend — lerp the target point each frame instead of snapping
+        // LookAt blend for boat-locked mode
         const freeLX = animState.lookAtX, freeLY = animState.lookAtY, freeLZ = animState.lookAtZ;
         const rawLookX = freeLX * (1 - lockCam) + worldLookAt.x * lockCam;
         const rawLookY = freeLY * (1 - lockCam) + worldLookAt.y * lockCam;
         const rawLookZ = freeLZ * (1 - lockCam) + worldLookAt.z * lockCam;
 
-        updateScene._smoothLookAt.x += (rawLookX - updateScene._smoothLookAt.x) * 0.04;
-        updateScene._smoothLookAt.y += (rawLookY - updateScene._smoothLookAt.y) * 0.04;
-        updateScene._smoothLookAt.z += (rawLookZ - updateScene._smoothLookAt.z) * 0.04;
+        updateScene._smoothLookAt.x += (rawLookX - updateScene._smoothLookAt.x) * 0.5;
+        updateScene._smoothLookAt.y += (rawLookY - updateScene._smoothLookAt.y) * 0.5;
+        updateScene._smoothLookAt.z += (rawLookZ - updateScene._smoothLookAt.z) * 0.5;
         camera.lookAt(updateScene._smoothLookAt);
       } else {
-        camera.position.x += (animState.cameraX - camera.position.x) * 0.05;
-        camera.position.y += (animState.cameraY - camera.position.y) * 0.05;
-        camera.position.z += (animState.cameraZ - camera.position.z) * 0.05;
+        // Free camera: set directly from animState — GSAP scrub already smooths these
+        camera.position.set(animState.cameraX, animState.cameraY, animState.cameraZ);
 
-        // Also smooth lookAt in free mode
-        updateScene._smoothLookAt.x += (animState.lookAtX - updateScene._smoothLookAt.x) * 0.06;
-        updateScene._smoothLookAt.y += (animState.lookAtY - updateScene._smoothLookAt.y) * 0.06;
-        updateScene._smoothLookAt.z += (animState.lookAtZ - updateScene._smoothLookAt.z) * 0.06;
+        updateScene._smoothLookAt.set(animState.lookAtX, animState.lookAtY, animState.lookAtZ);
         camera.lookAt(updateScene._smoothLookAt);
       }
     }
