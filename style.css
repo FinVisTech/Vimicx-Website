@@ -439,6 +439,7 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
 }
 
 .about-text { flex: 1; min-width: 300px; }
+.about-text h2 { margin-bottom: 32px; }
 .about-text p { color: var(--text-secondary); margin-bottom: 20px; font-size: 1.05rem; }
 
 /* ---------- Features Section ---------- */
