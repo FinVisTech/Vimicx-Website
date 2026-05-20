@@ -337,7 +337,9 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
 .image-comparison-slider {
   width: 100%;
   height: 100%;
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
   overflow: hidden;
 }
 
@@ -380,6 +382,25 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
   opacity: 0;
   cursor: ew-resize;
   z-index: 4;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  touch-action: pan-y; /* Prevent swipe navigation, allow vertical scroll */
+}
+
+.slider-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 60px; /* Wide grab area */
+  height: 400px; /* Full height to allow grabbing anywhere vertically */
+  cursor: ew-resize;
+}
+
+.slider-range::-moz-range-thumb {
+  width: 60px;
+  height: 400px;
+  cursor: ew-resize;
+  border: none;
+  background: transparent;
 }
 
 .slider-handle {
