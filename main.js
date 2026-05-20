@@ -97,7 +97,7 @@ function init() {
   setupScrollAnimations();
   setupRevealAnimations();
   setupNav();
-  drawAboutCanvas();
+  setupImageSlider();
 
   // Resize
   window.addEventListener('resize', onResize);
@@ -285,10 +285,10 @@ function buildFish() {
 
   // Define 4 initial bases.
   const bassDefs = [
-    { pos: [5.50, -0.80, -2.60], rot: [0, 59 * DEG2RAD, 0], scale: 0.35, color: 0xff3300 },
-    { pos: [3.50, -1.20, -3.00], rot: [0, 30 * DEG2RAD, 0], scale: 0.30, color: 0xff3300 },
-    { pos: [7.50, -0.50, -1.50], rot: [0, 80 * DEG2RAD, 0], scale: 0.35, color: 0xff3300 },
-    { pos: [9.50, -1.50, 1.60], rot: [0, 45 * DEG2RAD, 0], scale: 0.25, color: 0xff3300 },
+    { pos: [5.50, -1.40, -2.60], rot: [0, 59 * DEG2RAD, 0], scale: 0.35, color: 0xff3300 },
+    { pos: [3.50, -1.80, -3.00], rot: [0, 30 * DEG2RAD, 0], scale: 0.30, color: 0xff3300 },
+    { pos: [7.50, -1.10, -1.50], rot: [0, 80 * DEG2RAD, 0], scale: 0.35, color: 0xff3300 },
+    { pos: [9.50, -2.10, 1.60], rot: [0, 45 * DEG2RAD, 0], scale: 0.25, color: 0xff3300 },
   ];
 
   bassDefs.forEach(def => {
@@ -337,7 +337,7 @@ function buildFish() {
 function buildTree() {
   treeModelGroup = new THREE.Group();
   const DEG2RAD = Math.PI / 180;
-  treeModelGroup.position.set(8.50, -1.90, 0.90);
+  treeModelGroup.position.set(8.50, -2.50, 0.90);
   treeModelGroup.rotation.set(0 * DEG2RAD, 0 * DEG2RAD, 0 * DEG2RAD, 'YXZ');
   treeModelGroup.scale.set(0.30, 0.30, 0.30);
   treeModelGroup.visible = false; // hidden until phase 4
@@ -375,12 +375,12 @@ let terrainMesh, terrainEdges, terrainContours;
 let terrainAnchor; // follows boat yaw only (no wave bob, no pitch/roll)
 
 function buildWater() {
-  // Water uses original dimensions; terrain is expanded separately
-  const waterSizeX = 14, waterSizeZ = 10;
+  // Water size is now slightly larger than the terrain (42x24)
+  const waterSizeX = 46, waterSizeZ = 28;
   const sizeX = 42, sizeZ = 30;
 
   // ---- LAYER 1: Opaque animated water surface (visible at start) ----
-  const waterSegW = 100, waterSegH = 100;
+  const waterSegW = 150, waterSegH = 150;
   waterGeo = new THREE.PlaneGeometry(waterSizeX, waterSizeZ, waterSegW, waterSegH);
   waterGeo.rotateX(-Math.PI / 2);
 
@@ -443,7 +443,7 @@ function buildWater() {
     color: 0x0C9AA1, wireframe: true, transparent: true, opacity: 0
   });
   terrainMesh = new THREE.Mesh(terrainGeo, terrainMat);
-  terrainMesh.position.y = -1.8;
+  terrainMesh.position.y = -2.4;
   terrainMesh.name = 'terrain';
   terrainAnchor.add(terrainMesh);
 
@@ -486,63 +486,19 @@ function buildParticles() {
   scene.add(particles);
 }
 
-// ===== ABOUT CANVAS (decorative mesh graphic) =====
-function drawAboutCanvas() {
-  const c = document.getElementById('about-mesh-canvas');
-  if (!c) return;
-  const ctx = c.getContext('2d');
-  c.width = 500; c.height = 400;
+// ===== IMAGE COMPARISON SLIDER =====
+function setupImageSlider() {
+  const slider = document.getElementById('slider-range');
+  const beforeContainer = document.getElementById('slider-before-container');
+  const handle = document.getElementById('slider-handle');
 
-  let aboutAnimating = false;
-  let aboutRafId = null;
+  if (!slider || !beforeContainer || !handle) return;
 
-  function draw() {
-    if (!aboutAnimating) return;
-    ctx.clearRect(0, 0, 500, 400);
-    ctx.strokeStyle = 'rgba(12, 154, 161, 0.15)';
-    ctx.lineWidth = 1;
-    const t = Date.now() * 0.001;
-    for (let x = 0; x < 500; x += 20) {
-      for (let y = 0; y < 400; y += 20) {
-        const dx = Math.sin(t + x * 0.01 + y * 0.005) * 5;
-        const dy = Math.cos(t + y * 0.01) * 5;
-        ctx.beginPath();
-        ctx.arc(x + dx, y + dy, 1.5, 0, Math.PI * 2);
-        ctx.stroke();
-        if (x < 480) {
-          ctx.beginPath();
-          ctx.moveTo(x + dx, y + dy);
-          const dx2 = Math.sin(t + (x + 20) * 0.01 + y * 0.005) * 5;
-          const dy2 = Math.cos(t + y * 0.01) * 5;
-          ctx.lineTo(x + 20 + dx2, y + dy2);
-          ctx.stroke();
-        }
-        if (y < 380) {
-          ctx.beginPath();
-          ctx.moveTo(x + dx, y + dy);
-          const dx3 = Math.sin(t + x * 0.01 + (y + 20) * 0.005) * 5;
-          const dy3 = Math.cos(t + (y + 20) * 0.01) * 5;
-          ctx.lineTo(x + dx3, y + 20 + dy3);
-          ctx.stroke();
-        }
-      }
-    }
-    aboutRafId = requestAnimationFrame(draw);
-  }
-
-  // Only animate when the about section is visible on screen
-  const aboutObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        aboutAnimating = true;
-        draw();
-      } else {
-        aboutAnimating = false;
-        if (aboutRafId) cancelAnimationFrame(aboutRafId);
-      }
-    });
-  }, { threshold: 0.01 });
-  aboutObserver.observe(c.parentElement || c);
+  slider.addEventListener('input', (e) => {
+    const value = e.target.value;
+    beforeContainer.style.clipPath = `polygon(0 0, ${value}% 0, ${value}% 100%, 0 100%)`;
+    handle.style.left = `${value}%`;
+  });
 }
 
 // ===== SCROLL ANIMATIONS =====
@@ -582,12 +538,12 @@ function setupScrollAnimations() {
     }
   });
 
-  // Phase 1: Screens AND water flicker and fade together (0-20%)
-  tl.to(animState, { screenOpacity: 0.3, waterOpacity: 0.4, duration: 0.04 })
-    .to(animState, { screenOpacity: 0.8, waterOpacity: 0.9, duration: 0.015 })
-    .to(animState, { screenOpacity: 0.1, waterOpacity: 0.15, duration: 0.025 })
-    .to(animState, { screenOpacity: 0.6, waterOpacity: 0.7, duration: 0.015 })
-    .to(animState, { screenOpacity: 0, waterOpacity: 0, duration: 0.065 });
+  // Phase 1: Screens flicker and fade (0-20%)
+  tl.to(animState, { screenOpacity: 0.3, duration: 0.04 })
+    .to(animState, { screenOpacity: 0.8, duration: 0.015 })
+    .to(animState, { screenOpacity: 0.1, duration: 0.025 })
+    .to(animState, { screenOpacity: 0.6, duration: 0.015 })
+    .to(animState, { screenOpacity: 0, duration: 0.065 });
 
   // Show problem text
   tl.to('#t-text-1', { opacity: 1, duration: 0.06 }, 0.04)
@@ -616,8 +572,9 @@ function setupScrollAnimations() {
   tl.to(animState, { fishVisibility: 1, duration: 0.12 }, 0.60)
     .to(animState, { scanLinePos: 3, duration: 0.12 }, 0.65);
 
-  // Show fish text ("See what others can't")
+  // Show fish text ("See things differently") and fade water
   tl.to('#t-text-3', { opacity: 1, duration: 0.06 }, 0.63)
+    .to(animState, { waterOpacity: 0, duration: 0.06 }, 0.63)
     .to('#t-text-3', { opacity: 0, duration: 0.06 }, 0.80);
 
   // Phase 4: Tree reveal (same timing as fish)

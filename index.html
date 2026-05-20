@@ -63,13 +63,16 @@
 
   <!-- ===== Navigation ===== -->
   <nav id="main-nav">
-    <div class="nav-logo">VIMI<span>CX</span></div>
+    <div class="nav-logo">
+      <img src="img/logo.png" alt="Vimicx Logo" class="nav-logo-icon">
+      VIMICX
+    </div>
     <ul class="nav-links">
       <li><a href="#about">About</a></li>
       <li><a href="#features">Features</a></li>
       <li><a href="#how-it-works">How It Works</a></li>
       <li><a href="#team">Team</a></li>
-      <li><a href="#cta" class="btn-primary">Get Early Access</a></li>
+      <li><a href="#cta" class="btn-primary">Join Mailing List</a></li>
     </ul>
     <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
       <span></span><span></span><span></span>
@@ -100,7 +103,7 @@
         <h2 class="gradient-text">Vimicx is Superhuman vision</h2>
       </div>
       <div class="transform-text" id="t-text-3">
-        <h2 class="gradient-text">See things differently</h2>
+        <h2 class="gradient-text">See the difference</h2>
       </div>
     </div>
   </section>
@@ -111,16 +114,35 @@
     <!-- ===== About ===== -->
     <section id="about">
       <div class="about-visual reveal">
-        <canvas id="about-mesh-canvas" class="mesh-graphic"></canvas>
+        <div class="image-comparison-slider" id="about-slider">
+          <img src="img/after.jpg" alt="Vimicx 3D"
+            class="slider-image after-image" id="slider-after-img">
+          <div class="before-image-container" id="slider-before-container">
+            <img src="img/before.jpg" alt="Traditional Sonar"
+              class="slider-image before-image" id="slider-before-img">
+          </div>
+          <input type="range" min="0" max="100" value="50" class="slider-range" id="slider-range"
+            aria-label="Image comparison slider">
+          <div class="slider-handle" id="slider-handle">
+            <div class="slider-handle-line"></div>
+            <div class="slider-handle-button">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="about-text">
         <span class="label reveal">Who We Are</span>
-        <h2 class="reveal">Building the Future of<br><span class="gradient-text">Spatial Data</span></h2>
-        <p class="reveal">Vimicx is pioneering the next generation of data visualization. We build live 3D models that
-          stream directly to augmented reality glasses, turning overwhelming datasets into spatial experiences that
-          anyone can instantly understand.</p>
-        <p class="reveal">From marine navigation to industrial inspection, our technology replaces walls of screens with
-          a single, immersive view — making hard-to-interpret data intuitive, actionable, and alive.</p>
+        <h2 class="reveal">The Future of<br><span class="gradient-text">Spatial Data</span></h2>
+        <p class="reveal">Vimicx: Building the Future of Spatial Data</p>
+        <p class="reveal">We pioneer the next generation of data visualization. Vimicx streams live 3D models directly to AR glasses, replacing walls of screens with a single immersive view that makes complex industrial and marine data instantly actionable.</p>
       </div>
     </section>
 
@@ -134,18 +156,40 @@
       </div>
       <div class="features-grid">
         <div class="feature-card reveal" id="feature-live-3d">
-          <div class="feature-icon">◈</div>
+          <div class="feature-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--cyan);">
+              <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+              <path d="m3.3 7 8.7 5 8.7-5"/>
+              <path d="M12 22V12"/>
+            </svg>
+          </div>
           <h3>Live 3D Modeling</h3>
           <p>Real-time mesh generation from sensor data — no pre-processing, no waiting. Your world, modeled as it
             happens.</p>
         </div>
         <div class="feature-card reveal" id="feature-ar">
-          <div class="feature-icon">◎</div>
+          <div class="feature-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--cyan);">
+              <circle cx="6" cy="15" r="4"/>
+              <circle cx="18" cy="15" r="4"/>
+              <path d="M14 14.5a2 2 0 0 0-4 0"/>
+              <path d="M2 14.5c1-1.3 3.6-2.5 4-2.5 1 0 3 1.2 4 2.5"/>
+              <path d="M22 14.5c-1-1.3-3.6-2.5-4-2.5-1 0-3 1.2-4 2.5"/>
+              <path d="M2 14.5v-2"/>
+              <path d="M22 14.5v-2"/>
+            </svg>
+          </div>
           <h3>AR Glass Native</h3>
           <p>Purpose-built for augmented reality headsets. See 3D data overlaid on the real world with zero latency.</p>
         </div>
         <div class="feature-card reveal" id="feature-clarity">
-          <div class="feature-icon">◇</div>
+          <div class="feature-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--cyan);">
+              <path d="M12 3v12"/>
+              <path d="M5 15h14v2H5z"/>
+              <path d="M6 17v4h12v-4"/>
+            </svg>
+          </div>
           <h3>Data Clarity Engine</h3>
           <p>Our AI distills complex multi-dimensional datasets into clean spatial views that reveal patterns invisible
             on flat screens.</p>
@@ -189,7 +233,7 @@
     </section>
 
     <!-- ===== Stats ===== -->
-    <section id="stats" class="content-section">
+    <section id="stats">
       <div class="stats-grid">
         <div class="stat-item reveal">
           <div class="stat-value gradient-text" data-target="5">&lt; 5ms</div>
@@ -219,19 +263,43 @@
       </div>
       <div class="use-cases-grid">
         <div class="use-case-card reveal" id="uc-marine">
-          <div class="use-case-icon">🚤</div>
+          <div class="use-case-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--cyan);">
+              <path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1 .6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+              <path d="M19.38 20A11.6 11.6 0 0 0 21 14l-9-4-9 4c0 2.9.94 5.34 2.81 7.76"/>
+              <path d="M19 13V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6"/>
+              <path d="M12 10v4"/>
+              <path d="M12 2v3"/>
+            </svg>
+          </div>
           <h3>Marine & Fishing</h3>
           <p>Replace banks of sonar screens with a live 3D underwater view. See structure, fish, and bottom topology in
             real-time through AR glasses.</p>
         </div>
         <div class="use-case-card reveal" id="uc-industrial">
-          <div class="use-case-icon">🏭</div>
+          <div class="use-case-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--cyan);">
+              <path d="M2 21h20" />
+              <path d="M4 14h16v2H4z" />
+              <path d="M6 16v5" />
+              <path d="M18 16v5" />
+              <path d="M12 16v5" />
+              <path d="M8 14L12 2L16 14" />
+              <path d="M9.5 10h5" />
+              <path d="M10.8 6h2.4" />
+              <path d="M12 2v12" />
+            </svg>
+          </div>
           <h3>Industrial Inspection</h3>
           <p>Overlay thermal, structural, and sensor data onto physical infrastructure. Spot defects, stress points, and
             anomalies at a glance.</p>
         </div>
         <div class="use-case-card reveal" id="uc-defense">
-          <div class="use-case-icon">🛡️</div>
+          <div class="use-case-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--cyan);">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
+            </svg>
+          </div>
           <h3>Defense & Security</h3>
           <p>Fuse radar, sonar, and surveillance feeds into a unified 3D operational picture. Enhanced situational
             awareness for any environment.</p>
@@ -304,7 +372,10 @@
     <footer id="main-footer">
       <div class="footer-top">
         <div class="footer-brand">
-          <div class="nav-logo">VIMI<span>CX</span></div>
+          <div class="nav-logo">
+            <img src="img/logo.png" alt="Vimicx Logo" class="nav-logo-icon">
+            VIMICX
+          </div>
           <p>Transforming complex data into spatial understanding through live 3D models and augmented reality.</p>
         </div>
         <div class="footer-links">
