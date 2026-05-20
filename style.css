@@ -272,10 +272,16 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
   opacity: 0;
   max-width: 600px;
   padding: 0 20px;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.8));
 }
 
-.transform-text h2 { margin-bottom: 16px; }
-.transform-text p { color: var(--text-secondary); font-size: 1.1rem; }
+.transform-text h2 { 
+  margin-bottom: 16px; 
+}
+.transform-text p { 
+  color: var(--text-secondary); 
+  font-size: 1.1rem; 
+}
 
 /* ---------- Content Sections ---------- */
 .content-section {

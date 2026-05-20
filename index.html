@@ -13,13 +13,15 @@
   <!-- Open Graph -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="Vimicx — Live 3D Data Visualization in AR">
-  <meta property="og:description" content="Live 3D models in AR glasses — transforming complex data into spatial understanding you can see and act on.">
+  <meta property="og:description"
+    content="Live 3D models in AR glasses — transforming complex data into spatial understanding you can see and act on.">
   <meta property="og:url" content="https://vimicx.com">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Vimicx — Live 3D Data Visualization in AR">
-  <meta name="twitter:description" content="Live 3D models in AR glasses — transforming complex data into spatial understanding you can see and act on.">
+  <meta name="twitter:description"
+    content="Live 3D models in AR glasses — transforming complex data into spatial understanding you can see and act on.">
 
   <!-- Structured Data -->
   <script type="application/ld+json">
@@ -49,7 +51,11 @@
 
   <!-- No-JS fallback for SEO crawlers -->
   <noscript>
-    <style>#three-canvas { display: none; }</style>
+    <style>
+      #three-canvas {
+        display: none;
+      }
+    </style>
   </noscript>
 </head>
 
@@ -76,8 +82,7 @@
   <!-- ===== Hero Section ===== -->
   <section id="hero">
     <div class="hero-content">
-      <h1 class="gradient-text">See Through<br>Water</h1>
-      <p>Catch Fish Like Never Before</p>
+      <h1 class="gradient-text">See Through Water</h1>
     </div>
     <div class="scroll-indicator">
       <span>Scroll</span>
@@ -89,18 +94,13 @@
   <section id="transformation">
     <div class="transform-overlay">
       <div class="transform-text" id="t-text-1">
-        <span class="label">The Problem</span>
-        <h2 class="gradient-text">Too Many Screens,<br>Too Much Confusion</h2>
-        <p>Traditional forward facing sonar requires constant attention, ruining the fishing experience for many anglers.</p>
+        <h2 class="gradient-text">Sonar is confusing</h2>
       </div>
       <div class="transform-text" id="t-text-2">
-        <span class="label">Our Solution</span>
-        <h2 class="gradient-text">Superhuman Vision<br>All in a Pair of Glasses</h2>
+        <h2 class="gradient-text">Vimicx is Superhuman vision</h2>
       </div>
       <div class="transform-text" id="t-text-3">
-        <span class="label">See What Others Can't</span>
-        <h2 class="gradient-text">See What's Hidden<br>Beneath the Surface</h2>
-        <p>See data where it actually exists.</p>
+        <h2 class="gradient-text">See things differently</h2>
       </div>
     </div>
   </section>
@@ -114,8 +114,13 @@
         <canvas id="about-mesh-canvas" class="mesh-graphic"></canvas>
       </div>
       <div class="about-text">
-        <h2 class="reveal">Building Superhuman<br><span class="gradient-text">Vision</span></h2>
-        <p class="reveal">Vimicx is pioneering the next dimension of data visualization. Vimicx goes beyond the biological limits of the human eye.</p>
+        <span class="label reveal">Who We Are</span>
+        <h2 class="reveal">Building the Future of<br><span class="gradient-text">Spatial Data</span></h2>
+        <p class="reveal">Vimicx is pioneering the next generation of data visualization. We build live 3D models that
+          stream directly to augmented reality glasses, turning overwhelming datasets into spatial experiences that
+          anyone can instantly understand.</p>
+        <p class="reveal">From marine navigation to industrial inspection, our technology replaces walls of screens with
+          a single, immersive view — making hard-to-interpret data intuitive, actionable, and alive.</p>
       </div>
     </section>
 
@@ -124,62 +129,26 @@
       <div class="section-header">
         <span class="label reveal">Capabilities</span>
         <h2 class="reveal">Why <span class="gradient-text">Vimicx</span></h2>
-        <p class="reveal">3D technology meets world-class spatial UX.<br>The first and only experience of its kind.</p>
+        <p class="reveal">Our platform combines real-time 3D modeling with AR display technology to deliver unmatched
+          spatial intelligence.</p>
       </div>
       <div class="features-grid">
         <div class="feature-card reveal" id="feature-live-3d">
-          <div class="feature-icon">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--cyan);">
-              <!-- Sharp diamond eye contour -->
-              <polygon points="2,12 12,5 22,12 12,19" />
-              <!-- Inner diamond iris -->
-              <polygon points="12,8 16,12 12,16 8,12" />
-              <!-- Center pupil diamond -->
-              <polygon points="12,10.5 13.5,12 12,13.5 10.5,12" fill="currentColor" />
-              <!-- Clean crosshairs -->
-              <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-            </svg>
-          </div>
-          <h3>Live 3D Vision</h3>
-          <p>Real-time mesh generation from live sonar feeds. No pre-processing, no waiting. Experience underwater environments as they actually exist.</p>
+          <div class="feature-icon">◈</div>
+          <h3>Live 3D Modeling</h3>
+          <p>Real-time mesh generation from sensor data — no pre-processing, no waiting. Your world, modeled as it
+            happens.</p>
         </div>
         <div class="feature-card reveal" id="feature-ar">
-          <div class="feature-icon">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--cyan);">
-              <!-- Sleek temples/arms extending back in perspective -->
-              <path d="M2.5 8c-1.5 0-2-1-2-2.5V4.5c0-1.5.5-2 2-2" />
-              <path d="M21.5 8c1.5 0 2-1 2-2.5V4.5c0-1.5-.5-2-2-2" />
-              <!-- Continuous aggressive Pit Viper shield lens -->
-              <path d="M2.5 8h19L20.5 15h-5.5l-3-3-3 3H3.5L2.5 8z" fill="rgba(12, 154, 161, 0.1)" />
-              <!-- Heavy double brow bar -->
-              <path d="M2 6.5h20" />
-            </svg>
-          </div>
-          <h3>AR Display Adaptable</h3>
-          <p>Designed to operate hands-free with lightweight, comfortable AR glasses for active anglers, and fully compatible with any AR-enabled mobile device.</p>
+          <div class="feature-icon">◎</div>
+          <h3>AR Glass Native</h3>
+          <p>Purpose-built for augmented reality headsets. See 3D data overlaid on the real world with zero latency.</p>
         </div>
         <div class="feature-card reveal" id="feature-clarity">
-          <div class="feature-icon">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--cyan);">
-              <!-- 3D Isometric Wireframe Cube representing the World / Spatial structure -->
-              <polygon points="12,2 20,6 20,16 12,20 4,16 4,6" />
-              <!-- Inner projection lines connecting to the core -->
-              <line x1="12" y1="11" x2="12" y2="20" />
-              <line x1="12" y1="11" x2="4" y2="6" />
-              <line x1="12" y1="11" x2="20" y2="6" />
-              <!-- Glowing central neural core node (AI diamond) -->
-              <polygon points="12,9.5 13.5,11 12,12.5 10.5,11" fill="currentColor" />
-              <!-- Small neural vertex node circles/dots -->
-              <circle cx="12" cy="2" r="1" fill="currentColor" />
-              <circle cx="4" cy="6" r="1" fill="currentColor" />
-              <circle cx="20" cy="6" r="1" fill="currentColor" />
-              <circle cx="4" cy="16" r="1" fill="currentColor" />
-              <circle cx="20" cy="16" r="1" fill="currentColor" />
-              <circle cx="12" cy="20" r="1" fill="currentColor" />
-            </svg>
-          </div>
-          <h3>AI World Model</h3>
-          <p>Our fine-tuned AI world model solves occlusion and enables autonomous target tracking, turning complex 3D sensor data into an intuitive view.</p>
+          <div class="feature-icon">◇</div>
+          <h3>Data Clarity Engine</h3>
+          <p>Our AI distills complex multi-dimensional datasets into clean spatial views that reveal patterns invisible
+            on flat screens.</p>
         </div>
       </div>
     </section>
@@ -280,7 +249,8 @@
       <div class="team-grid">
         <div class="team-card reveal" id="team-ceo">
           <div class="team-photo">
-            <img src="img/ceo.webp" alt="Alex Morgan - CEO of Vimicx" id="ceo-photo" width="120" height="120" loading="lazy" decoding="async">
+            <img src="img/ceo.webp" alt="Alex Morgan - CEO of Vimicx" id="ceo-photo" width="120" height="120"
+              loading="lazy" decoding="async">
           </div>
           <h3>Alex Morgan</h3>
           <div class="role">Chief Executive Officer</div>
@@ -289,7 +259,8 @@
         </div>
         <div class="team-card reveal" id="team-cto">
           <div class="team-photo">
-            <img src="img/cto.webp" alt="Jordan Chen - CTO of Vimicx" id="cto-photo" width="120" height="120" loading="lazy" decoding="async">
+            <img src="img/cto.webp" alt="Jordan Chen - CTO of Vimicx" id="cto-photo" width="120" height="120"
+              loading="lazy" decoding="async">
           </div>
           <h3>Jordan Chen</h3>
           <div class="role">Chief Technology Officer</div>
@@ -298,7 +269,8 @@
         </div>
         <div class="team-card reveal" id="team-board">
           <div class="team-photo">
-            <img src="img/board.webp" alt="Sam Rivera - Board Member at Vimicx" id="board-photo" width="120" height="120" loading="lazy" decoding="async">
+            <img src="img/board.webp" alt="Sam Rivera - Board Member at Vimicx" id="board-photo" width="120"
+              height="120" loading="lazy" decoding="async">
           </div>
           <h3>Sam Rivera</h3>
           <div class="role">Board Member</div>
@@ -312,11 +284,14 @@
     <section id="cta">
       <span class="label reveal">Join Us</span>
       <h2 class="reveal">Ready to See the <span class="gradient-text">Unseen</span>?</h2>
-      <p class="reveal">Be among the first to experience spatial data intelligence. Join our mailing list for updates and early access.</p>
+      <p class="reveal">Be among the first to experience spatial data intelligence. Join our mailing list for updates
+        and early access.</p>
       <form id="mailing-list-form" class="cta-form reveal" autocomplete="on">
         <div class="form-row">
-          <input type="text" id="mailing-name" name="name" placeholder="Name (optional)" autocomplete="name" aria-label="Your name (optional)">
-          <input type="email" id="mailing-email" name="email" placeholder="Enter your email" required autocomplete="email" aria-label="Email address">
+          <input type="text" id="mailing-name" name="name" placeholder="Name (optional)" autocomplete="name"
+            aria-label="Your name (optional)">
+          <input type="email" id="mailing-email" name="email" placeholder="Enter your email" required
+            autocomplete="email" aria-label="Email address">
           <button type="submit" class="btn-primary btn-large" id="mailing-submit-btn">
             Join Email List
           </button>
@@ -650,8 +625,10 @@
       <button id="bass-close-btn" title="Close bass editor">✕</button>
     </div>
 
-    <div class="editor-controls" id="bass-list-container" style="padding: 12px 20px 0; display: flex; flex-wrap: wrap; gap: 6px;">
-      <button class="screen-list-btn active" id="bass-select-0" style="padding: 6px 10px; font-size: 0.7rem;">Bass 1</button>
+    <div class="editor-controls" id="bass-list-container"
+      style="padding: 12px 20px 0; display: flex; flex-wrap: wrap; gap: 6px;">
+      <button class="screen-list-btn active" id="bass-select-0" style="padding: 6px 10px; font-size: 0.7rem;">Bass
+        1</button>
       <button class="screen-list-btn" id="bass-select-1" style="padding: 6px 10px; font-size: 0.7rem;">Bass 2</button>
       <button class="screen-list-btn" id="bass-select-2" style="padding: 6px 10px; font-size: 0.7rem;">Bass 3</button>
       <button class="screen-list-btn" id="bass-select-3" style="padding: 6px 10px; font-size: 0.7rem;">Bass 4</button>
@@ -826,18 +803,18 @@
   <script defer src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
   <script defer src="main.js"></script>
   <script defer src="supabase.js"></script>
-  
+
   <script>
     // Dev Mode Check: Only load dev tools if "?dev" is in the URL
     if (window.location.search.includes('dev')) {
-      
+
       window.vimicxEditorLogs = {};
-      window.copyAllDevSettings = function(btn) {
+      window.copyAllDevSettings = function (btn) {
         let allLogs = [];
         for (let key in window.vimicxEditorLogs) {
           try {
             allLogs.push(window.vimicxEditorLogs[key]());
-          } catch(e) {}
+          } catch (e) { }
         }
         const text = allLogs.join('\n\n------------------------------------------------------------\n\n');
         navigator.clipboard.writeText(text).then(() => {
@@ -852,9 +829,9 @@
       const devMenuContainer = document.getElementById('dev-menu-container');
       const devMenuMainBtn = document.getElementById('dev-menu-main-btn');
       const devMenuDropdown = document.getElementById('dev-menu-dropdown');
-      
+
       if (devMenuContainer) devMenuContainer.style.display = 'block';
-      
+
       if (devMenuMainBtn && devMenuDropdown) {
         devMenuMainBtn.addEventListener('click', () => {
           if (devMenuDropdown.style.display === 'none') {
@@ -864,7 +841,7 @@
           }
         });
       }
-      
+
       // Dynamically load dev scripts
       const screenEditorScript = document.createElement('script');
       screenEditorScript.src = 'dev/screen-editor.js';
