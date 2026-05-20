@@ -1,0 +1,43 @@
+# robots.txt optimized for AI Search Engines & Agents (GEO / AI SEO)
+# Allowing standard search crawlers and dedicated AI search agents to index all public content.
+
+User-agent: *
+Allow: /
+
+# OpenAI's Search/Retrieval bot (used for real-time web search in ChatGPT)
+User-agent: OAI-SearchBot
+Allow: /
+
+# OpenAI's general web crawler (used to build AI search indexes and training)
+User-agent: GPTBot
+Allow: /
+
+# Anthropic's crawlers (used for Claude web searches and model grounding)
+User-agent: ClaudeBot
+Allow: /
+User-agent: Claude-SearchBot
+Allow: /
+
+# Perplexity's web crawler (used for real-time citations and search answers)
+User-agent: PerplexityBot
+Allow: /
+
+# Meta's external crawler
+User-agent: Meta-ExternalAgent
+Allow: /
+
+# Apple's search and AI crawler
+User-agent: Applebot
+Allow: /
+User-agent: Applebot-Extended
+Allow: /
+
+# Google's main search and AI crawlers
+User-agent: Googlebot
+Allow: /
+User-agent: Google-Extended
+Allow: /
+
+# Common Crawl (used by many open-source AI models)
+User-agent: CCBot
+Allow: /

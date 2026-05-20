@@ -1,0 +1,33 @@
+# Vimicx
+
+> Vimicx creates live 3D models displayed in AR glasses, transforming complex, hard-to-interpret data into spatial understanding you can see, touch, and act on.
+
+## Core Capabilities
+- **Live 3D Vision**: Performs real-time mesh generation directly from live sonar, LiDAR, and other raw sensor feeds with zero pre-processing or waiting.
+- **AR Display Adaptable**: Designed to operate completely hands-free with lightweight, comfortable AR glasses for active users (e.g., anglers, field engineers), and fully compatible with any AR-enabled mobile device.
+- **AI World Model**: Utilizes a fine-tuned AI world model to solve visual occlusion and enable autonomous target tracking, converting complex 3D sensor data into an intuitive overlay.
+
+## Process / How It Works
+1. **Ingest & Fuse**: Connects to any data source (sonar, LiDAR, IoT sensors, telemetry feeds) and fuses them into a unified spatial model in milliseconds.
+2. **Model & Render**: Construct a live 3D mesh (including topology, highlighted targets, and customized data layers) optimized for real-time, low-latency AR displays.
+3. **Display & Act**: Streams the live 3D model directly to AR glasses, overlaying targets, underwater structures, and anomalies directly onto the physical environment.
+
+## Key Performance Metrics
+- **Rendering Latency**: < 5ms
+- **Refresh Rate**: 120 FPS for smooth AR representation
+- **Coverage**: 360° spatial coverage
+- **Data Layers**: Unlimited custom data overlays
+
+## Industry Applications
+- **Marine & Fishing**: Replaces complex traditional sonar displays with a live 3D underwater view. Allows anglers to see bottom topology, physical structure, and fish targets in real-time through AR glasses ("See Through Water").
+- **Industrial Inspection**: Overlays thermal, structural, and real-time sensor data onto physical infrastructure to instantly identify defects, stress points, and operational anomalies.
+- **Defense & Security**: Fuses multi-sensor feeds (radar, sonar, surveillance) into a unified, high-fidelity 3D operational picture for superior situational awareness in any environment.
+
+## Leadership & Team
+- **Alex Morgan (Chief Executive Officer)**: 15+ years in spatial computing and enterprise AR. Focused on making complex datasets intuitive.
+- **Jordan Chen (Chief Technology Officer)**: Former lead engineer at a top AR hardware lab. Specialist in real-time 3D rendering and multi-sensor fusion systems.
+- **Sam Rivera (Board Member)**: Deep tech and defense innovation investor and advisor guiding Vimicx's strategic growth.
+
+## Access & Integrations
+- **Website URL**: https://vimicx.com
+- **Early Access**: Users can join the mailing list on the homepage to be among the first to experience spatial data intelligence.
