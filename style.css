@@ -145,8 +145,8 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
 .nav-logo span { color: var(--cyan); }
 
 .nav-logo-icon {
-  width: 32px;
-  height: 32px;
+  width: 45px;
+  height: 45px;
   object-fit: contain;
 }
 
@@ -927,7 +927,8 @@ body.editor-active #three-canvas {
 #tree-editor,
 #boat-editor,
 #scene-editor,
-#water-editor {
+#water-editor,
+#logo-editor {
   position: fixed;
   top: 0;
   width: 300px;

@@ -872,6 +872,34 @@
     <pre id="water-log-output" style="display:none;"></pre>
   </div>
 
+  <!-- ===== Logo Editor Panel ===== -->
+  <div id="logo-editor" style="display:none;">
+    <div class="editor-header">
+      <span class="editor-title">🖼️ Logo Editor</span>
+      <button id="logo-close-btn" title="Close logo editor">✕</button>
+    </div>
+
+    <div class="editor-controls" id="logo-controls">
+      <div class="editor-group-label">Logo Sizes</div>
+      <div class="editor-group">
+        <label>Icon Size <span class="editor-val" id="lv-icon-size">32</span>px</label>
+        <input type="range" id="logo-icon-size" min="16" max="128" step="1" value="32">
+      </div>
+      <div class="editor-group">
+        <label>Text Size <span class="editor-val" id="lv-text-size">1.5</span>rem</label>
+        <input type="range" id="logo-text-size" min="0.5" max="4" step="0.1" value="1.5">
+      </div>
+    </div>
+
+    <div class="editor-export-row">
+      <button id="logo-copy-btn">📋 Copy Settings</button>
+    </div>
+    <div class="editor-export-row">
+      <button id="logo-log-btn">📄 Show in Console</button>
+    </div>
+    <pre id="logo-log-output" style="display:none;"></pre>
+  </div>
+
   <!-- ===== UNIFIED DEV MENU ===== -->
   <div id="dev-menu-container" style="display:none;">
     <button id="dev-menu-main-btn" title="Open Dev Tools">🛠️ Dev Tools</button>
@@ -883,6 +911,7 @@
       <button id="tree-toggle-btn" class="dev-dropdown-btn">🌳 Tree</button>
       <button id="scene-toggle-btn" class="dev-dropdown-btn">🌍 Scene</button>
       <button id="water-toggle-btn" class="dev-dropdown-btn">🌊 Water</button>
+      <button id="logo-toggle-btn" class="dev-dropdown-btn">🖼️ Logo</button>
     </div>
   </div>
 
@@ -963,6 +992,10 @@
       const waterEditorScript = document.createElement('script');
       waterEditorScript.src = 'dev/water-editor.js';
       document.body.appendChild(waterEditorScript);
+
+      const logoEditorScript = document.createElement('script');
+      logoEditorScript.src = 'dev/logo-editor.js';
+      document.body.appendChild(logoEditorScript);
     }
   </script>
 </body>
