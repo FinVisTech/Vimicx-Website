@@ -434,9 +434,10 @@ function buildWater() {
   pos.needsUpdate = true;
   terrainGeo.computeVertexNormals();
 
-  // Create an anchor group that follows the boat's yaw but NOT its wave motion
+  // Anchor follows boat yaw + Y wave offset (per-frame in updateScene) so terrain
+  // appears locked from the camera, which also rides the boat's Y bob
   terrainAnchor = new THREE.Group();
-  terrainAnchor.position.y = 0; // stays at fixed height
+  terrainAnchor.position.y = 0; // initial value; overwritten each frame
   scene.add(terrainAnchor);
 
   const terrainMat = new THREE.MeshBasicMaterial({
@@ -580,11 +581,9 @@ function setupScrollAnimations() {
   // Phase 4: Tree reveal (same timing as fish)
   tl.to(animState, { treeVisibility: 1, duration: 0.12 }, 0.60);
 
-  // Phase 5: Staggered fade-out — tree first, then bass, then terrain, then canvas
-  // Tree fades away first (80-88%)
+  // Phase 5: Tree and fish fade out together, then terrain, then canvas
   tl.to(animState, { treeVisibility: 0, duration: 0.08, ease: 'power2.in' }, 0.80);
-  // Bass models fade next (84-92%)
-  tl.to(animState, { fishVisibility: 0, duration: 0.08, ease: 'power2.in' }, 0.84);
+  tl.to(animState, { fishVisibility: 0, duration: 0.08, ease: 'power2.in' }, 0.80);
   // Terrain fades out (88-95%)
   tl.to(animState, { terrainReveal: 0, duration: 0.07, ease: 'power2.in' }, 0.88);
   // Canvas fades to transparent last (92-100%) — no black, scene dissolves away
@@ -682,11 +681,15 @@ function updateScene() {
       const bx = 0, bz = 0; // boat center in local coords
       const sampleDist = 1.5; // distance to sample for tilt
 
-      const hCenter = getWaveHeight(bx, bz, t);
-      const hFront = getWaveHeight(bx + sampleDist, bz, t);
-      const hBack = getWaveHeight(bx - sampleDist, bz, t);
-      const hLeft = getWaveHeight(bx, bz - sampleDist, t);
-      const hRight = getWaveHeight(bx, bz + sampleDist, t);
+      // Fade wave motion out as terrain reveals — camera is locked to boat, so any
+      // Y-bob or pitch/roll makes the fixed-world terrain appear to heave.
+      const waveBlend = Math.max(0, 1 - animState.terrainReveal);
+
+      const hCenter = getWaveHeight(bx, bz, t) * waveBlend;
+      const hFront = getWaveHeight(bx + sampleDist, bz, t) * waveBlend;
+      const hBack = getWaveHeight(bx - sampleDist, bz, t) * waveBlend;
+      const hLeft = getWaveHeight(bx, bz - sampleDist, t) * waveBlend;
+      const hRight = getWaveHeight(bx, bz + sampleDist, t) * waveBlend;
 
       // Pitch (nose up/down) from front-to-back slope
       const pitch = Math.atan2(hFront - hBack, sampleDist * 2) * 0.8;
@@ -730,7 +733,7 @@ function updateScene() {
     // Bass model is independent in the scene — stays fixed, doesn't bob
     // (position set once during load, no per-frame updates needed)
 
-    // Sync terrain anchor to boat's yaw only (no pitch, roll, or Y bobbing)
+    // Sync terrain anchor yaw to boat yaw only
     if (terrainAnchor && boatGroup) {
       terrainAnchor.rotation.y = boatGroup.rotation.y;
     }
