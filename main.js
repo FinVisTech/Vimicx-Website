@@ -164,7 +164,7 @@ function buildBoat() {
     // Main boat mesh
     const boatMat = new THREE.MeshPhongMaterial({
       color: 0x053030,
-      specular: 0x0C9AA1,
+      specular: 0xffffff,
       shininess: 60,
       transparent: true,
       opacity: 1,
@@ -201,7 +201,7 @@ function buildBoat() {
       // Fallback: build a simple placeholder boat
       const fallbackGeo = new THREE.BoxGeometry(2, 0.5, 5);
       const fallbackMat = new THREE.MeshPhongMaterial({
-        color: 0x053030, specular: 0x0C9AA1, shininess: 60,
+        color: 0x053030, specular: 0xffffff, shininess: 60,
         transparent: true, opacity: 1
       });
       const fallback = new THREE.Mesh(fallbackGeo, fallbackMat);
