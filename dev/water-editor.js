@@ -83,7 +83,7 @@
       `  side: THREE.DoubleSide,\n` +
       `  flatShading: false\n` +
       `});\n`;
-    return snippet;
+    return `// --- WATER SETTINGS START ---\n${snippet}// --- WATER SETTINGS END ---\n`;
   }
 
   window.vimicxEditorLogs['water'] = generateLog;

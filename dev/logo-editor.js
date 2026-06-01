@@ -60,7 +60,7 @@
       `  width: ${inputs.iconSize.value}px;\n` +
       `  height: ${inputs.iconSize.value}px;\n` +
       `}\n`;
-    return snippet;
+    return `/* --- LOGO SETTINGS START --- */\n${snippet}/* --- LOGO SETTINGS END --- */\n`;
   }
 
   window.vimicxEditorLogs['logo'] = generateLog;

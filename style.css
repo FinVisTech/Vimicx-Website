@@ -132,6 +132,8 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
   padding: 14px clamp(20px, 5vw, 60px);
 }
 
+/* --- LOGO SETTINGS START --- */
+/* --- Logo Size Settings (Update in style.css) --- */
 .nav-logo {
   display: flex;
   align-items: center;
@@ -145,10 +147,11 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
 .nav-logo span { color: var(--cyan); }
 
 .nav-logo-icon {
-  width: 45px;
-  height: 45px;
+  width: 32px;
+  height: 32px;
   object-fit: contain;
 }
+/* --- LOGO SETTINGS END --- */
 
 .nav-links { display: flex; gap: 32px; align-items: center; list-style: none; }
 .nav-links a:not(.btn-primary) {

@@ -182,7 +182,7 @@
       `pointMagenta.position.set(3, 2, -2);\n` +
       `scene.add(pointMagenta);\n`;
 
-    return snippet;
+    return `// --- SCENE SETTINGS START ---\n${snippet}// --- SCENE SETTINGS END ---\n`;
   }
 
   window.vimicxEditorLogs['scene'] = generateLog;

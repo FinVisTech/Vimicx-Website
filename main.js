@@ -54,37 +54,42 @@ function init() {
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setClearColor(0x1E1E1E, 1);
   renderer.autoClear = true;
 
   // Scene
   scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x1E1E1E, 0.018);
 
+  // --- CAMERA SETTINGS START ---
   // Camera
   const initialFov = window.innerWidth < 768 ? 75 : 45;
   camera = new THREE.PerspectiveCamera(initialFov, window.innerWidth / window.innerHeight, 0.1, 100);
   camera.position.set(0.0, 3.0, 8.0);
   camera.lookAt(0.00, -0.42, -1.40);
+  // --- CAMERA SETTINGS END ---
 
   // ---- Dot-grid masking system ----
   setupDotGridMask();
 
+  // --- SCENE SETTINGS START ---
+  renderer.setClearColor(0x1e1e1e, 1);
+  scene.fog = new THREE.FogExp2(0x1e1e1e, 0.018);
+
   // Lights
-  ambientLight = new THREE.AmbientLight(0x0a4a4a, 0.6);
+  ambientLight = new THREE.AmbientLight(0xffffff, 0.60);
   scene.add(ambientLight);
 
-  dirLight = new THREE.DirectionalLight(0x5ac8c8, 0.8);
+  dirLight = new THREE.DirectionalLight(0xffffff, 0.80);
   dirLight.position.set(5, 8, 5);
   scene.add(dirLight);
 
-  pointCyan = new THREE.PointLight(0x0C9AA1, 1.5, 20);
+  pointCyan = new THREE.PointLight(0xffffff, 1.50, 20);
   pointCyan.position.set(-3, 4, 2);
   scene.add(pointCyan);
 
-  pointMagenta = new THREE.PointLight(0x7DFDFE, 0.8, 15);
+  pointMagenta = new THREE.PointLight(0xffffff, 0.80, 15);
   pointMagenta.position.set(3, 2, -2);
   scene.add(pointMagenta);
+  // --- SCENE SETTINGS END ---
 
   // Build scene
   buildDotGridPlane(); // background dot grid in 3D scene
@@ -111,9 +116,7 @@ let boatLoaded = false;
 
 function buildBoat() {
   boatGroup = new THREE.Group();
-  boatGroup.position.set(0.00, -1.00, 0.00);
-  boatGroup.rotation.set(0, 0, 0, 'YXZ');
-  boatGroup.scale.set(1.00, 1.00, 1.00);
+  scene.add(boatGroup);
   scene.add(boatGroup);
 
   const loader = new THREE.STLLoader();
@@ -173,6 +176,14 @@ function buildBoat() {
     boatMesh.receiveShadow = true;
     boatGroup.add(boatMesh);
 
+    // --- BOAT SETTINGS START ---
+    boatGroup.position.set(0.00, -1.00, 0.00);
+    boatGroup.rotation.set(0, 0, 0, 'YXZ');
+    boatGroup.scale.set(1.00, 1.00, 1.00);
+    const hull = boatGroup.children.find(c => c.name === 'hull');
+    if (hull) hull.material.color.setHex(0x053030);
+    // --- BOAT SETTINGS END ---
+
     // Now that the STL is loaded, build dependent elements
     buildScreens();
     buildWireframeClones();
@@ -216,6 +227,7 @@ function buildScreens() {
   // Exact positions and rotations from user's editor session.
   // All screens face stern (-X) via rotY ≈ π/2, tilted upward via rotX.
 
+  // --- SCREEN SETTINGS START ---
   const screenDefs = [
     // --- BOW / CONSOLE SCREENS (3 screens at the helm) ---
     // Screen 1: Main center console (large, primary display)
@@ -231,6 +243,7 @@ function buildScreens() {
     // Screen 5: Left seat screen
     { w: 0.3, h: 0.22, pos: [-0.09, 0.37, -0.50], rot: [0.035, 1.571, 0], color: 0x00ff88 },
   ];
+  // --- SCREEN SETTINGS END ---
 
   screenDefs.forEach((def, i) => {
     const geo = new THREE.PlaneGeometry(def.w, def.h);
@@ -280,6 +293,7 @@ function buildWireframeClones() {
 
 // ===== FISH (Low Poly Bass — Loaded as Pre-computed Wireframe OBJ) =====
 function buildFish() {
+  // --- BASS SETTINGS START ---
   const DEG2RAD = Math.PI / 180;
   bassModels = [];
 
@@ -302,6 +316,7 @@ function buildFish() {
     scene.add(group);
     bassModels.push(group);
   });
+  // --- BASS SETTINGS END ---
 
   // Load the pre-computed bass wireframe OBJ (replaces runtime STL decimation)
   const loader = new THREE.OBJLoader();
@@ -336,11 +351,6 @@ function buildFish() {
 // ===== TREE (Loaded as Pre-computed Wireframe OBJ) =====
 function buildTree() {
   treeModelGroup = new THREE.Group();
-  const DEG2RAD = Math.PI / 180;
-  treeModelGroup.position.set(8.50, -2.50, 0.90);
-  treeModelGroup.rotation.set(0 * DEG2RAD, 0 * DEG2RAD, 0 * DEG2RAD, 'YXZ');
-  treeModelGroup.scale.set(0.30, 0.30, 0.30);
-  treeModelGroup.visible = false; // hidden until phase 4
   scene.add(treeModelGroup);
 
   const loader = new THREE.OBJLoader();
@@ -360,6 +370,16 @@ function buildTree() {
     object.scale.set(1, 1, 1);
 
     treeModelGroup.add(object);
+    treeModelGroup.visible = false; // hidden until phase 4
+
+    // --- TREE SETTINGS START ---
+    const DEG2RAD = Math.PI / 180;
+    treeModelGroup.position.set(8.50, -2.50, 0.90);
+    treeModelGroup.rotation.set(0 * DEG2RAD, 0 * DEG2RAD, 0 * DEG2RAD, 'YXZ');
+    treeModelGroup.scale.set(0.30, 0.30, 0.30);
+    treeModelGroup.traverse(c => { if(c.material && c.material.color) c.material.color.setHex(0x04ff00); });
+    // --- TREE SETTINGS END ---
+
     console.log('Tree wireframe loaded');
   },
     function (xhr) {
@@ -391,15 +411,17 @@ function buildWater() {
     waterGeo.userData.baseY[i] = wPos.getY(i);
   }
 
+  // --- WATER SETTINGS START ---
   const waterMat = new THREE.MeshPhongMaterial({
-    color: 0x1E1E1E,
-    specular: 0x0C9AA1,
+    color: 0x22374f,
+    specular: 0x79a0fb,
     shininess: 90,
     transparent: true,
-    opacity: 0.95,
+    opacity: 1.00,
     side: THREE.DoubleSide,
     flatShading: false
   });
+  // --- WATER SETTINGS END ---
   waterPlane = new THREE.Mesh(waterGeo, waterMat);
   waterPlane.position.y = -0.35 - 0.3; // offset to compensate for boatGroup.position.y
   waterPlane.name = 'water_surface';
