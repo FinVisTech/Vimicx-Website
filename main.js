@@ -12,6 +12,7 @@ let waterPlane, waterGeo;
 let bassModels = []; // Array of Low poly bass models — locked to terrain
 let treeModelGroup; // Low poly tree wireframe
 let ambientLight, dirLight, pointCyan, pointMagenta;
+let glassesGroup, glassesFrame, glassesEdges, glassesLeftArm, glassesRightArm, glassesHUDLeft, glassesHUDRight;
 
 // Dot-grid masking system — renders dots only where no 3D objects are visible
 let maskRenderTarget;
@@ -23,7 +24,7 @@ let animState = {
   treeVisibility: 0,
   scanLinePos: -2,
   boatRotY: 0,
-  boatRotSpeed: 1,
+  boatRotSpeed: 0,
   boatAlignToTarget: 0,  // 0 = free spin, 1 = fully aligned to BOAT_TARGET_YAW
   cameraLockedToBoat: 0,   // 0 = free camera, 1 = camera follows boat transform
   cameraX: 0,
@@ -34,6 +35,8 @@ let animState = {
   lookAtZ: 0,
   canvasOpacity: 1,
   waterOpacity: 1,
+  glassesProgress: 0,
+  glassesTiltUp: 0,
   fov: window.innerWidth < 768 ? 75 : 45
 };
 
@@ -51,7 +54,7 @@ function init() {
 
   // Renderer — opaque background so dot grid plane is visible behind objects
   const canvas = document.getElementById('three-canvas');
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, stencil: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.autoClear = true;
@@ -65,6 +68,7 @@ function init() {
   camera = new THREE.PerspectiveCamera(initialFov, window.innerWidth / window.innerHeight, 0.1, 100);
   camera.position.set(0.0, 3.0, 8.0);
   camera.lookAt(0.00, -0.42, -1.40);
+  scene.add(camera);
   // --- CAMERA SETTINGS END ---
 
   // ---- Dot-grid masking system ----
@@ -97,6 +101,7 @@ function init() {
   buildFish();
   buildTree();
   buildParticles();
+  buildGlasses();
 
   // Setup animations
   setupScrollAnimations();
@@ -292,6 +297,253 @@ function buildWireframeClones() {
   // The boat remains solid throughout the entire animation.
 }
 
+// ===== GLASSES (Futuristic holographic AR HUD glasses) =====
+// ===== GLASSES (Aggressive sports Pit Viper visor) =====
+function buildGlasses() {
+  glassesGroup = new THREE.Group();
+
+  // Outer shape of the Pit Viper frame (rounded & smoothed brow + winglets)
+  const shape = new THREE.Shape();
+
+  // Start near top-left brow
+  shape.moveTo(-1.25, 0.46);
+  // Brow top peak in center (smoothly curved)
+  shape.quadraticCurveTo(0, 0.52, 1.25, 0.46);
+  // Round top-right corner to outer winglet
+  shape.quadraticCurveTo(1.38, 0.46, 1.38, 0.34);
+  // Aggressive flared winglet sweep
+  shape.quadraticCurveTo(1.44, 0.22, 1.26, 0.18);
+  // Line down to outer cheek
+  shape.lineTo(1.20, -0.34);
+  // Round bottom-right cheek corner
+  shape.quadraticCurveTo(1.18, -0.45, 1.0, -0.45);
+  // Bottom sweep to nose bridge
+  shape.lineTo(0.24, -0.45);
+  // Round nose pad transition
+  shape.quadraticCurveTo(0.14, -0.45, 0.10, -0.32);
+  // Curve over nose bridge (thick, solid nose piece!)
+  shape.quadraticCurveTo(0, -0.28, -0.10, -0.32);
+  // Round left nose pad transition
+  shape.quadraticCurveTo(-0.14, -0.45, -0.24, -0.45);
+  // Left cheek bottom
+  shape.lineTo(-1.0, -0.45);
+  // Round bottom-left cheek corner
+  shape.quadraticCurveTo(-1.18, -0.45, -1.20, -0.34);
+  // Line up to outer left winglet
+  shape.lineTo(-1.26, 0.18);
+  // Flared winglet sweep left
+  shape.quadraticCurveTo(-1.44, 0.22, -1.38, 0.34);
+  // Round top-left corner back to brow line
+  shape.quadraticCurveTo(-1.38, 0.46, -1.25, 0.46);
+  shape.closePath();
+
+  // Single massive visor opening path for the frame hole (thick nose bridge & smooth curves)
+  const visorHole = new THREE.Path();
+  visorHole.moveTo(-1.20, 0.36);
+  visorHole.quadraticCurveTo(0, 0.41, 1.20, 0.36); // smooth top
+  visorHole.quadraticCurveTo(1.24, 0.24, 1.14, 0.12); // smooth right
+  visorHole.lineTo(1.10, -0.36); // cheek down
+  visorHole.quadraticCurveTo(1.08, -0.38, 1.0, -0.38); // cheek corner
+  visorHole.lineTo(0.24, -0.38); // nose right
+  visorHole.quadraticCurveTo(0.12, -0.38, 0.08, -0.20); // nose cutout right
+  visorHole.quadraticCurveTo(0, -0.16, -0.08, -0.20); // nose bridge (thick!)
+  visorHole.quadraticCurveTo(-0.12, -0.38, -0.24, -0.38); // nose cutout left
+  visorHole.lineTo(-1.0, -0.38); // cheek left
+  visorHole.quadraticCurveTo(-1.08, -0.38, -1.10, -0.36); // cheek corner left
+  visorHole.lineTo(-1.14, 0.12); // cheek up
+  visorHole.quadraticCurveTo(-1.24, 0.24, -1.20, 0.36); // smooth left
+  visorHole.closePath();
+  shape.holes.push(visorHole);
+
+  // Single massive visor shape for the lens geometry
+  const lensShape = new THREE.Shape();
+  lensShape.moveTo(-1.20, 0.36);
+  lensShape.quadraticCurveTo(0, 0.41, 1.20, 0.36);
+  lensShape.quadraticCurveTo(1.24, 0.24, 1.14, 0.12);
+  lensShape.lineTo(1.10, -0.36);
+  lensShape.quadraticCurveTo(1.08, -0.38, 1.0, -0.38);
+  lensShape.lineTo(0.24, -0.38);
+  lensShape.quadraticCurveTo(0.12, -0.38, 0.08, -0.20);
+  lensShape.quadraticCurveTo(0, -0.16, -0.08, -0.20);
+  lensShape.quadraticCurveTo(-0.12, -0.38, -0.24, -0.38);
+  lensShape.lineTo(-1.0, -0.38);
+  lensShape.quadraticCurveTo(-1.08, -0.38, -1.10, -0.36);
+  lensShape.lineTo(-1.14, 0.12);
+  lensShape.quadraticCurveTo(-1.24, 0.24, -1.20, 0.36);
+  lensShape.closePath();
+
+  // Extrude options: sharp brow, with nice beveling for polished acetate feel
+  const extrudeSettings = {
+    depth: 0.04,
+    bevelEnabled: true,
+    bevelThickness: 0.015,
+    bevelSize: 0.012, // rounded bevel edges
+    bevelSegments: 5
+  };
+
+  const frameGeo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+  frameGeo.translate(0, 0, -0.02); // center in Z
+
+  // Opaque glossy black Pit Viper frame material
+  const frameMat = new THREE.MeshPhongMaterial({
+    color: 0x060606, // solid matte/glossy black
+    specular: 0x555555,
+    shininess: 85,
+    transparent: true,
+    opacity: 0.0,
+    side: THREE.DoubleSide
+  });
+
+  glassesFrame = new THREE.Mesh(frameGeo, frameMat);
+  glassesFrame.renderOrder = 1001; // High renderOrder to prevent water depth conflicts
+  glassesGroup.add(glassesFrame);
+
+  // --- CRYSTAL CLEAR SEE-THROUGH VISOR LENS ---
+  const lensGeo = new THREE.ShapeGeometry(lensShape);
+  const lensMat = new THREE.MeshBasicMaterial({
+    color: 0x00f3ff, // glowing subtle electric cyan tint
+    transparent: true,
+    opacity: 0.0, // starts invisible, smoothly faded in updateScene
+    side: THREE.DoubleSide,
+
+    // WebGL Stencil Buffer settings: write 1 to the stencil buffer where the lens is drawn
+    stencilWrite: true,
+    stencilRef: 1,
+    stencilFunc: THREE.AlwaysStencilFunc,
+    stencilFail: THREE.KeepStencilOp,
+    stencilZFail: THREE.KeepStencilOp,
+    stencilZPass: THREE.ReplaceStencilOp,
+    depthWrite: false, // Ensure the transparent lens does not block solid depth sorting
+    depthTest: false   // Prevent lens from being hidden behind water plane during transition
+  });
+
+  // Build glassesLens with the crystal clear lensMat
+  const glassesLens = new THREE.Mesh(lensGeo, lensMat);
+  glassesLens.position.z = 0.005; // sit slightly forward
+  glassesLens.renderOrder = 1; // Render FIRST so it writes the stencil mask before water (renderOrder = 2)
+  glassesGroup.add(glassesLens);
+
+  // --- AERODYNAMIC THICK TEMPLE ARMS ---
+  const armShape = new THREE.Shape();
+  armShape.moveTo(0.0, 0.12);     // Broad hinge
+  armShape.lineTo(0.6, 0.12);     // Straight bar
+  armShape.lineTo(0.8, 0.08);     // Angular notch
+  armShape.lineTo(1.7, 0.08);     // Ear bar
+  armShape.lineTo(2.0, -0.15);    // Pointed hook
+  armShape.lineTo(2.2, -0.35);    // Angular pointed tip
+  armShape.lineTo(2.08, -0.38);   // Tip bottom
+  armShape.lineTo(1.9, -0.18);    // Curve inside
+  armShape.lineTo(1.6, -0.02);    // Bottom hook edge
+  armShape.lineTo(0.0, -0.02);    // Bottom hinge
+  armShape.closePath();
+
+  const armExtrudeSettings = {
+    depth: 0.045, // solid thick arms
+    bevelEnabled: true,
+    bevelThickness: 0.012,
+    bevelSize: 0.008,
+    bevelSegments: 4
+  };
+
+  // Left temple arm (positioned higher at brow-bar level y = 0.34, meeting the frame winglets perfectly)
+  const armGeoLeft = new THREE.ExtrudeGeometry(armShape, armExtrudeSettings);
+  glassesLeftArm = new THREE.Mesh(armGeoLeft, frameMat);
+  glassesLeftArm.position.set(-1.38, 0.34, -0.015);
+  glassesLeftArm.rotation.y = -Math.PI / 2;
+  glassesLeftArm.renderOrder = 1001;
+  glassesGroup.add(glassesLeftArm);
+
+  // Right temple arm (positioned higher at brow-bar level y = 0.34, meeting the frame winglets perfectly)
+  const armGeoRight = new THREE.ExtrudeGeometry(armShape, armExtrudeSettings);
+  glassesRightArm = new THREE.Mesh(armGeoRight, frameMat);
+  glassesRightArm.position.set(1.34, 0.34, -0.015);
+  glassesRightArm.rotation.y = -Math.PI / 2;
+  glassesRightArm.renderOrder = 1001;
+  glassesGroup.add(glassesRightArm);
+
+  // --- CYBER VISOR HUD OVERLAYS ---
+  // High-contrast tactical glowing aviation green
+  const hudMat = new THREE.MeshBasicMaterial({
+    color: 0x00ff88, // glowing tactical green
+    transparent: true,
+    opacity: 0.7,
+    side: THREE.DoubleSide,
+    depthTest: false
+  });
+
+  const tickMat = new THREE.LineBasicMaterial({
+    color: 0x00ff88,
+    transparent: true,
+    opacity: 0.8,
+    depthTest: false
+  });
+
+  // Sleek Tactical Heading Tape at the absolute top of the lens, arcing perfectly to match the brow frame curve
+  const headingPoints = [];
+
+  // Calculate arched y-coordinate matching the frame's quadratic brow bar curve (0.05 units of uniform padding below the frame)
+  function getHUDHeight(x) {
+    return 0.31 + 0.05 * (1 - Math.pow(x / 1.20, 2));
+  }
+
+  // 1. Build the arched horizontal baseline by connecting segment lines
+  const startX = -0.90, endX = 0.90, step = 0.05;
+  for (let xVal = startX; xVal < endX; xVal += step) {
+    const nextX = Math.min(xVal + step, endX);
+    headingPoints.push(
+      new THREE.Vector3(xVal, getHUDHeight(xVal), 0.02),
+      new THREE.Vector3(nextX, getHUDHeight(nextX), 0.02)
+    );
+  }
+
+  // 2. Build the subtle downward-pointing compass tick marks aligned on the curved baseline
+  for (let xVal = -0.85; xVal <= 0.86; xVal += 0.05) {
+    if (Math.abs(xVal) < 0.05) continue; // Keep the absolute center clear of ticks
+    const tickHeight = (Math.abs(Math.round(xVal * 20)) % 2 === 0) ? 0.020 : 0.012;
+    const baseY = getHUDHeight(xVal);
+    headingPoints.push(
+      new THREE.Vector3(xVal, baseY, 0.02),
+      new THREE.Vector3(xVal, baseY - tickHeight, 0.02)
+    );
+  }
+
+  const headingGeo = new THREE.BufferGeometry().setFromPoints(headingPoints);
+  glassesHUDLeft = new THREE.LineSegments(headingGeo, tickMat);
+  glassesHUDLeft.renderOrder = 1002;
+  glassesGroup.add(glassesHUDLeft);
+
+  // Left Outer Bracket (Tilted outward at the top to match the lens shape, no inner lines)
+  const bracketLeftPoints = [
+    new THREE.Vector3(-1.04, 0.28, 0.02), new THREE.Vector3(-1.10, 0.28, 0.02),
+    new THREE.Vector3(-1.10, 0.28, 0.02), new THREE.Vector3(-1.02, -0.28, 0.02),
+    new THREE.Vector3(-1.02, -0.28, 0.02), new THREE.Vector3(-0.96, -0.28, 0.02)
+  ];
+  const bracketLeftGeo = new THREE.BufferGeometry().setFromPoints(bracketLeftPoints);
+  const bracketLeft = new THREE.LineSegments(bracketLeftGeo, tickMat);
+  bracketLeft.renderOrder = 1002;
+  glassesGroup.add(bracketLeft);
+
+  // Right Outer Bracket (Tilted outward at the top to match the lens shape, no inner lines)
+  const bracketRightPoints = [
+    new THREE.Vector3(1.04, 0.28, 0.02), new THREE.Vector3(1.10, 0.28, 0.02),
+    new THREE.Vector3(1.10, 0.28, 0.02), new THREE.Vector3(1.02, -0.28, 0.02),
+    new THREE.Vector3(1.02, -0.28, 0.02), new THREE.Vector3(0.96, -0.28, 0.02)
+  ];
+  const bracketRightGeo = new THREE.BufferGeometry().setFromPoints(bracketRightPoints);
+  glassesHUDRight = new THREE.LineSegments(bracketRightGeo, tickMat);
+  glassesHUDRight.renderOrder = 1002;
+  glassesGroup.add(glassesHUDRight);
+
+  // Add to camera
+  camera.add(glassesGroup);
+
+  // Store materials on group to easily fade them in updateScene
+  glassesGroup.userData = { hudMat, tickMat, lensMat, lensMesh: glassesLens };
+
+  // Initialize state
+  glassesGroup.visible = false;
+}
+
 // ===== FISH (Low Poly Bass — Loaded as Pre-computed Wireframe OBJ) =====
 function buildFish() {
   // --- BASS SETTINGS START ---
@@ -420,14 +672,20 @@ function buildWater() {
     transparent: true,
     opacity: 1.00,
     side: THREE.DoubleSide,
-    flatShading: false
+    flatShading: false,
+
+    // WebGL Stencil Buffer settings: render only where stencil ref is NOT 1 (i.e. outside the glasses lens)
+    stencilWrite: true,
+    stencilRef: 1,
+    stencilFunc: THREE.NotEqualStencilFunc
   });
   // --- WATER SETTINGS END ---
   waterPlane = new THREE.Mesh(waterGeo, waterMat);
-  waterPlane.position.y = -0.35 - 0.3; // offset to compensate for boatGroup.position.y
+  waterPlane.renderOrder = 2; // Render after stencil mask glassesLens (renderOrder = 1)
+  waterPlane.position.y = -0.65; // Fixed Y position in world coordinates (stable lake!)
   waterPlane.name = 'water_surface';
   waterPlane.receiveShadow = true;
-  boatGroup.add(waterPlane); // water moves with the boat
+  scene.add(waterPlane); // parent to scene instead of boatGroup so the lake remains stable
 
   // ---- LAYER 2: Terrain wiremesh topology (hidden initially, revealed on scroll) ----
   const segW = 120, segH = 120;
@@ -550,6 +808,39 @@ function setupScrollAnimations() {
     opacity: 0
   });
 
+  // Camera orbits smoothly to the left in a wide arc (0-100% of #hero scroll)
+  // Starts the instant the user begins scrolling, making the 90-degree stern orbit extremely slow, smooth, and majestic
+  const heroCamTimeline = gsap.timeline({
+    scrollTrigger: {
+      trigger: '#hero',
+      start: 'top top',
+      end: 'bottom top',
+      scrub: true, // Direct mapping since Lenis handles smooth scrolling; eliminates boundary tug-of-war!
+      overwrite: 'auto' // Let GSAP automatically override competing properties cleanly
+    }
+  });
+
+  heroCamTimeline.to(animState, {
+    cameraX: -1.2,
+    cameraZ: 6.2,
+    cameraY: 2.9,
+    lookAtX: 0.8,
+    lookAtY: 0.4,
+    lookAtZ: 0,
+    duration: 0.5,
+    ease: 'none'
+  })
+  .to(animState, {
+    cameraX: -2.5,
+    cameraZ: 3.5,
+    cameraY: 2.75,
+    lookAtX: 1.3,
+    lookAtY: 0.6,
+    lookAtZ: 0,
+    duration: 0.5,
+    ease: 'none'
+  });
+
   // ===== TRANSFORMATION TIMELINE =====
   const tl = gsap.timeline({
     scrollTrigger: {
@@ -558,12 +849,27 @@ function setupScrollAnimations() {
       end: '+=4500',
       scrub: 1,
       pin: true,
-      anticipatePin: 1
+      anticipatePin: 1,
+      overwrite: 'auto',
+      onEnter: () => tl.invalidate(), // Invalidate only when entering from the top to capture correct camera start coordinates
+      onLeaveBack: () => tl.invalidate() // Clear cached values on upward scroll to prevent snaps
     }
   });
 
-  // Phase 1: Screens flicker and fade (0-20%)
-  tl.to(animState, { screenOpacity: 0.3, duration: 0.04 })
+  // Phase 1: Camera continues its slow left orbit (stern wide shot) until problem text dissolves (0-20%)
+  tl.to(animState, {
+    cameraX: -3.5,
+    cameraZ: 0.0,
+    cameraY: 2.7,
+    lookAtX: 1.7,
+    lookAtY: 0.8,
+    lookAtZ: 0,
+    duration: 0.20,
+    ease: 'none'
+  }, 0.00);
+
+  // Screens flicker and fade (0-20%)
+  tl.to(animState, { screenOpacity: 0.3, duration: 0.04 }, 0.00)
     .to(animState, { screenOpacity: 0.8, duration: 0.015 })
     .to(animState, { screenOpacity: 0.1, duration: 0.025 })
     .to(animState, { screenOpacity: 0.6, duration: 0.015 })
@@ -574,15 +880,26 @@ function setupScrollAnimations() {
     .to('#t-text-1', { opacity: 0, duration: 0.04 }, 0.16);
 
   // Phase 2: Terrain wiremesh topology revealed (20-60%) — extended dwell time
+  // Pulls the camera smoothly onto the deck / cockpit and pivots forward down the bow (20-33%)
   tl.to(animState, { terrainReveal: 1, duration: 0.20 }, 0.20)
-    .to(animState, { cameraX: 1.7, cameraZ: 0, duration: 0.15 }, 0.20)
-    .to(animState, { cameraY: 2.4, duration: 0.15 }, 0.25)
-    .to(animState, { lookAtX: 8.77, lookAtY: -4.67, lookAtZ: 0, duration: 0.15 }, 0.20)
-    .to(animState, { fov: window.innerWidth < 768 ? 120 : 70, duration: 0.15, ease: 'power2.inOut' }, 0.20);
+    .to(animState, { fov: window.innerWidth < 768 ? 120 : 70, duration: 0.15, ease: 'power2.inOut' }, 0.20)
+    .to(animState, {
+      cameraX: 1.7,
+      cameraZ: 0.0,
+      cameraY: 2.4,
+      lookAtX: 8.77,
+      lookAtY: -4.67,
+      lookAtZ: 0,
+      duration: 0.13,
+      ease: 'power2.inOut'
+    }, 0.20);
 
   // Show solution text
   tl.to('#t-text-2', { opacity: 1, duration: 0.06 }, 0.25)
     .to('#t-text-2', { opacity: 0, duration: 0.04 }, 0.42);
+
+  // Animate the glasses frame coming onto the camera POV (from 33% to 63%)
+  tl.to(animState, { glassesProgress: 1, duration: 0.30, ease: 'power2.out' }, 0.33);
 
   // Slow the boat spin and begin smooth alignment to cinematic angle
   tl.to(animState, { boatRotSpeed: 0, duration: 0.10, ease: 'power2.out' }, 0.28);
@@ -592,23 +909,24 @@ function setupScrollAnimations() {
   // Lock camera to boat — starts earlier so it finishes before fish/tree appear
   tl.to(animState, { cameraLockedToBoat: 1, duration: 0.15, ease: 'power2.inOut' }, 0.36);
 
-  // Phase 3: Fish reveal — delayed until camera is fully settled on boat
-  tl.to(animState, { fishVisibility: 1, duration: 0.12 }, 0.60)
+  // Phase 3: Fish reveal — starts early with terrain reveal so they are already fully there before glasses rise
+  tl.to(animState, { fishVisibility: 1, duration: 0.13 }, 0.20)
     .to(animState, { scanLinePos: 3, duration: 0.12 }, 0.65);
 
-  // Show fish text ("See things differently") and fade water
+  // Show fish text ("See things differently")
   tl.to('#t-text-3', { opacity: 1, duration: 0.06 }, 0.63)
-    .to(animState, { waterOpacity: 0, duration: 0.06 }, 0.63)
     .to('#t-text-3', { opacity: 0, duration: 0.06 }, 0.80);
 
-  // Phase 4: Tree reveal (same timing as fish)
-  tl.to(animState, { treeVisibility: 1, duration: 0.12 }, 0.60);
+  // Smoothly tilt glasses and camera up when the third text starts to dissolve (0.80 to 0.92)
+  tl.to(animState, { glassesTiltUp: 1, duration: 0.12, ease: 'power1.inOut' }, 0.80);
 
-  // Phase 5: Tree and fish fade out together, then terrain, then canvas
-  tl.to(animState, { treeVisibility: 0, duration: 0.08, ease: 'power2.in' }, 0.80);
-  tl.to(animState, { fishVisibility: 0, duration: 0.08, ease: 'power2.in' }, 0.80);
-  // Terrain fades out (88-95%)
-  tl.to(animState, { terrainReveal: 0, duration: 0.07, ease: 'power2.in' }, 0.88);
+  // Phase 4: Tree reveal (same early timing as fish)
+  tl.to(animState, { treeVisibility: 1, duration: 0.13 }, 0.20);
+
+  // Phase 5: Tree, fish, and terrain fade out together with the canvas dissolve at the very end (92-100%)
+  tl.to(animState, { treeVisibility: 0, duration: 0.08, ease: 'power2.in' }, 0.92);
+  tl.to(animState, { fishVisibility: 0, duration: 0.08, ease: 'power2.in' }, 0.92);
+  tl.to(animState, { terrainReveal: 0, duration: 0.08, ease: 'power2.in' }, 0.92);
   // Canvas fades to transparent last (92-100%) — no black, scene dissolves away
   tl.to(animState, { canvasOpacity: 0, duration: 0.08, ease: 'power1.in' }, 0.92);
 
@@ -689,7 +1007,7 @@ function getWaveHeight(x, z, t) {
   h += Math.cos(x * 5.8 - z * 4.1 - t * 4.0) * 0.008;
   h += Math.sin(x * 7.0 + z * 6.5 + t * 4.5) * 0.005;
   h += Math.sin(x * 1.1 + z * 0.7 + t * 0.5) * Math.cos(x * 0.5 - z * 1.2 + t * 0.6) * 0.025;
-  return h;
+  return h * 0.55;
 }
 
 // ===== UPDATE FUNCTIONS =====
@@ -791,7 +1109,7 @@ function updateScene() {
         // LookAt blend for boat-locked mode
         const freeLX = animState.lookAtX, freeLY = animState.lookAtY, freeLZ = animState.lookAtZ;
         const rawLookX = freeLX * (1 - lockCam) + worldLookAt.x * lockCam;
-        const rawLookY = freeLY * (1 - lockCam) + worldLookAt.y * lockCam;
+        const rawLookY = freeLY * (1 - lockCam) + worldLookAt.y * lockCam + 3.5 * animState.glassesTiltUp;
         const rawLookZ = freeLZ * (1 - lockCam) + worldLookAt.z * lockCam;
 
         updateScene._smoothLookAt.x += (rawLookX - updateScene._smoothLookAt.x) * 0.5;
@@ -896,6 +1214,65 @@ function updateScene() {
         child.material.opacity = treePulse * tv * 0.85;
       }
     });
+  }
+
+  // ===== GLASSES HUD TRANSITION =====
+  if (glassesGroup) {
+    const p = animState.glassesProgress;
+    if (p < 0.001) {
+      glassesGroup.visible = false;
+    } else {
+      glassesGroup.visible = true;
+
+      // 1. Calculate fade-in opacity (quick fade in from p=0 to 0.15)
+      const opacity = Math.min(p / 0.15, 1.0);
+
+      // Apply opacity to all materials in the glasses group (solid opaque black Pit Viper frames)
+      glassesFrame.material.opacity = opacity * 1.0;
+      glassesLeftArm.material.opacity = opacity * 1.0;
+      glassesRightArm.material.opacity = opacity * 1.0;
+
+      // Apply overall fade to the transparent gradient lens and the cyber HUD overlays
+      const lensMesh = glassesGroup.userData.lensMesh;
+      const lensMat = glassesGroup.userData.lensMat;
+
+      if (lensMesh && lensMat) {
+        lensMat.opacity = opacity * 0.08; // Smoothly fade in the ultra-transparent crystal-clear lens!
+      }
+
+      // Activate and smoothly fade in HUD overlays (full strength once on face)
+      const hudTargetOpacity = Math.max(0, (p - 0.5) / 0.5); // Starts showing up halfway, fully active on face
+      if (glassesGroup.userData.hudMat) glassesGroup.userData.hudMat.opacity = opacity * 0.70 * hudTargetOpacity;
+      if (glassesGroup.userData.tickMat) glassesGroup.userData.tickMat.opacity = opacity * 0.80 * hudTargetOpacity;
+
+      // 2. Position calculations:
+      // Smoothly slide in straight from the bottom-center of the viewport
+      const z = -0.8 * (1 - p) + -0.22 * p;
+      const y = -0.8 * (1 - p) + 0.0 * p;
+      const x = 0.0; // Keep perfectly centered for a smooth, clean rise
+
+      glassesGroup.position.set(x, y, z);
+
+      // 3. Rotation calculations (in radians):
+      // Clean, elegant rise with a very subtle organic forward tilt that flattens out,
+      // and tilts up slightly as the head tilts up to simulate visual immersion
+      const rotX = -0.15 * (1 - p) + 0.06 * animState.glassesTiltUp;
+      // rotY and rotZ remain flat to ensure perfect centering
+      const rotY = 0.0;
+      const rotZ = 0.0;
+
+      glassesGroup.rotation.set(rotX, rotY, rotZ);
+
+      // 4. Scale calculations:
+      // Smooth natural scale growth without extreme scaling offsets
+      const aspect = window.innerWidth / window.innerHeight;
+      const finalScale = aspect < 1.0 ? 0.075 : 0.098;
+      const scale = 0.04 * (1 - p) + finalScale * p;
+      glassesGroup.scale.set(scale, scale, scale);
+
+      // Keep HUD heading tape aligned horizontally
+      glassesHUDLeft.rotation.z = 0;
+    }
   }
 
   // Animate FOV (skip when camera editor is actively controlling it)
@@ -1063,14 +1440,22 @@ function renderDotGridOverlay() {
     // - bass wireframe model (thin lines cause unstable masking)
     // - tree wireframe model
     // - terrain occluder (invisible depth mask)
+    // - glasses HUD group (thin glowing screen overlays)
     if (obj.name === 'ambient_particles') return;
     if (obj.name === 'terrain_occluder') return;
     if (bassModels.includes(obj)) return;
     if (obj === treeModelGroup) return;
+    if (obj === glassesGroup) return;
     // Skip anything parented under bassModels or treeModelGroup
+    // For glassesGroup, only skip the lens and HUD elements, allowing the solid frame and arms to mask the grid!
     let skipParent = obj.parent;
     while (skipParent) {
       if (bassModels.includes(skipParent) || skipParent === treeModelGroup) return;
+      if (skipParent === glassesGroup) {
+        if (obj !== glassesFrame && obj !== glassesLeftArm && obj !== glassesRightArm) {
+          return;
+        }
+      }
       skipParent = skipParent.parent;
     }
 

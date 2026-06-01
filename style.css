@@ -22,7 +22,7 @@
   --text-muted: #4d8a8c;
 
   --font-heading: 'Orbitron', sans-serif;
-  --font-body: 'Orbitron', sans-serif;
+  --font-body: 'Inter', sans-serif;
 
   --glass-border: rgba(12, 154, 161, 0.18);
   --glow-cyan: 0 0 30px rgba(12, 154, 161, 0.4);
@@ -39,6 +39,7 @@
 
 html {
   scroll-behavior: auto; /* Lenis handles smooth scroll */
+  scroll-padding-top: 74px; /* Offset scroll anchors to match the new sleek header height */
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -76,6 +77,16 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
 
 .hero-title {
   font-size: clamp(2.5rem, 6vw, 5rem);
+  line-height: 0.92; /* Perfect sweet spot: tight, premium, and highly legible */
+  color: var(--highlight); /* Elegant, premium icy white color (#E4FFFF) instead of gradient */
+}
+
+.water-gradient {
+  background: linear-gradient(to bottom, var(--highlight) 0%, var(--highlight) 30%, var(--layer-blend) 60%, var(--cyan) 85%, #005c8a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: inline-block;
 }
 
 @media (min-width: 768px) {
@@ -85,7 +96,7 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
 }
 
 .label {
-  font-family: var(--font-body);
+  font-family: var(--font-heading);
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -117,19 +128,33 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 1000;
-  padding: 20px clamp(20px, 5vw, 60px);
+  padding: 5px clamp(16px, 2vw, 28px); /* Compact padding to keep the header sleek while centering all elements */
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: var(--transition);
-  backdrop-filter: blur(0px);
+  background: transparent;
+  border-bottom: 1px solid transparent; /* Keeps layout static to completely eliminate flicker */
 }
 
-#main-nav.scrolled {
+/* Background panel transitions separately on a dedicated GPU thread */
+#main-nav::before {
+  content: '';
+  position: absolute;
+  inset: 0;
   background: var(--bg-glass);
   backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--glass-border);
-  padding: 14px clamp(20px, 5vw, 60px);
+  z-index: -1; /* Behind nav links/logo */
+  transform: translateY(-101%); /* Hidden completely off-screen at the start */
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#main-nav.scrolled::before {
+  transform: translateY(0); /* Drops down beautifully */
+  opacity: 1;
 }
 
 /* --- LOGO SETTINGS START --- */
@@ -137,58 +162,78 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
 .nav-logo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px; /* Tighter layout gap */
   font-family: var(--font-heading);
-  font-size: 1.5rem;
+  font-size: 1.7rem; /* Elegant sized logo text matching the compact design */
   font-weight: 800;
   color: #fff;
   letter-spacing: 2px;
+  text-decoration: none; /* Clear default anchor underline */
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), color 0.4s ease;
+  cursor: pointer;
+  transform-origin: center; /* Scale symmetrically from center with no left/right drift */
 }
+
+.nav-logo:hover {
+  color: var(--cyan); /* Smoothly highlight text in brand color */
+  transform: scale(1.08); /* Scales both the icon and text together on hover */
+}
+
 .nav-logo span { color: var(--cyan); }
 
 .nav-logo-icon {
-  width: 32px;
-  height: 32px;
+  width: 52px; /* Prominent but sleek compact brand logo icon */
+  height: 52px;
   object-fit: contain;
+  transition: filter 0.4s ease;
+}
+
+/* Subtle organic breathing grow and glow effect */
+.nav-logo:hover .nav-logo-icon {
+  filter: drop-shadow(0 0 10px rgba(12, 154, 161, 0.65)) brightness(1.15);
 }
 /* --- LOGO SETTINGS END --- */
 
-.nav-links { display: flex; gap: 32px; align-items: center; list-style: none; }
+.nav-links { display: flex; gap: 26px; align-items: center; list-style: none; }
 .nav-links a:not(.btn-primary) {
   color: var(--text-secondary);
-  font-size: 0.85rem;
+  font-size: 0.95rem; /* Shrunk slightly for optimal proportions and legibility */
   font-weight: 500;
   letter-spacing: 0.5px;
   display: inline-block;
   transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
-.nav-links a:not(.btn-primary):hover { 
-  color: #fff; 
+.nav-links a:not(.btn-primary):hover {
+  color: #fff;
   transform: translateY(-2px);
-  text-shadow: 0 4px 12px rgba(0,0,0,0.6), var(--glow-cyan); 
+  text-shadow: 0 4px 12px rgba(0,0,0,0.6), var(--glow-cyan);
 }
 
 .btn-primary {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 24px;
+  padding: 6px 14px; /* Compact padding to make the button exactly 10% smaller overall */
   border: 1px solid var(--cyan);
   border-radius: 100px;
-  color: var(--cyan);
+  color: var(--bg-primary); /* High contrast dark text on bright cyan */
   font-family: var(--font-body);
-  font-size: 0.85rem;
+  font-size: 0.95rem; /* Sweet spot size: perfectly aligned with navigation links */
   font-weight: 600;
   cursor: pointer;
-  background: transparent;
-  transition: var(--transition);
+  background: var(--cyan); /* Cyan filled, NOT a ghost button */
+  box-shadow: var(--glow-cyan); /* Cool glowing blue/teal effect always on */
+  transition: all 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* 40% faster transition for high responsiveness */
   letter-spacing: 0.5px;
 }
 .btn-primary:hover {
-  background: var(--cyan);
   color: var(--bg-primary);
-  box-shadow: var(--glow-cyan);
-  text-shadow: none;
+  background: var(--cyan);
+  transform: scale(1.06); /* Stays at full scaled size on hover */
+  box-shadow: 0 0 35px rgba(12, 154, 161, 0.8); /* Steady bright glow */
+}
+.btn-primary:active {
+  transform: scale(0.98); /* Snappy tactile click feedback */
 }
 
 .btn-large {
@@ -222,6 +267,7 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
   pointer-events: auto;
   max-width: 800px;
   padding: 0 20px;
+  margin-top: -37.5vh; /* Adjusted from -40vh to perfectly lock the word 'Water' in place while tightening typography */
 }
 
 .hero-content h1 {
@@ -245,25 +291,27 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  color: var(--text-muted);
-  font-size: 0.7rem;
-  letter-spacing: 2px;
+  gap: 2px; /* Tight pixel-perfect spacing between text and arrow */
+  color: #ffffff; /* pure white */
+  font-family: var(--font-heading);
+  font-weight: 700; /* bolder Orbitron font */
+  font-size: 0.95rem; /* larger font size */
+  letter-spacing: 3px;
+  text-indent: 3px; /* offsets trailing letter-spacing to center the text pixel-perfectly! */
   text-transform: uppercase;
   animation: pulse-down 2s ease-in-out infinite;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
 .scroll-indicator .arrow {
-  width: 20px;
-  height: 20px;
-  border-right: 2px solid var(--cyan);
-  border-bottom: 2px solid var(--cyan);
-  transform: rotate(45deg);
-  opacity: 0.6;
+  width: 30px;
+  height: 18px;
+  opacity: 0.8;
+  display: block;
 }
 
 @keyframes pulse-down {
-  0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.6; }
+  0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.8; }
   50% { transform: translateX(-50%) translateY(10px); opacity: 1; }
 }
 
@@ -277,14 +325,14 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
 .transform-overlay {
   position: absolute;
   inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   pointer-events: none;
 }
 
 .transform-text {
   position: absolute;
+  top: 20vh; /* Adjusted down slightly to sit comfortably between the header and the boat */
+  left: 50%;
+  transform: translate3d(-50%, 0, 0);
   text-align: center;
   opacity: 0;
   max-width: 800px;
@@ -293,13 +341,13 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
   filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.8));
 }
 
-.transform-text h2 { 
-  margin-bottom: 16px; 
+.transform-text h2 {
+  margin-bottom: 16px;
   font-size: clamp(1.8rem, 3.5vw, 2.8rem);
 }
-.transform-text p { 
-  color: var(--text-secondary); 
-  font-size: 1.1rem; 
+.transform-text p {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
 }
 
 /* ---------- Content Sections ---------- */
@@ -469,6 +517,7 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
   transition: var(--transition);
   position: relative;
   overflow: hidden;
+  text-align: center; /* Center-align text */
 }
 
 .feature-card:hover {
@@ -479,19 +528,38 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
 }
 
 .feature-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 12px;
+  width: 80px;
+  height: 80px;
+  border-radius: 18px;
   background: linear-gradient(135deg, rgba(12, 154, 161, 0.15), rgba(125, 253, 254, 0.08));
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 20px;
-  font-size: 1.5rem;
+  margin-bottom: 24px;
+  margin-left: auto; /* Center icon horizontally */
+  margin-right: auto; /* Center icon horizontally */
+  font-size: 2.2rem;
+  border: 1px solid rgba(12, 154, 161, 0.2); /* Sleek high-tech border */
+  transition: var(--transition);
 }
 
-.feature-card h3 { margin-bottom: 12px; color: #fff; }
-.feature-card p { color: var(--text-secondary); font-size: 0.92rem; line-height: 1.7; }
+.feature-card:hover .feature-icon {
+  border-color: rgba(12, 154, 161, 0.5);
+  box-shadow: 0 0 15px rgba(12, 154, 161, 0.25);
+}
+
+.feature-card h3 {
+  margin-bottom: 12px;
+  color: #fff;
+  font-size: 1.25rem;
+  white-space: nowrap; /* Keep headings on a single line */
+}
+.feature-card p {
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  line-height: 1.7;
+  text-align: left; /* Left-align the copy for optimal readability */
+}
 
 /* ---------- How It Works Section ---------- */
 #how-it-works {
@@ -551,34 +619,86 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
 #stats {
   position: relative;
   z-index: 1;
-  padding: 80px clamp(20px, 5vw, 80px);
-  background: linear-gradient(180deg, transparent, rgba(12, 154, 161, 0.05), transparent), var(--bg-primary);
+  padding: 40px 0;
+  background: linear-gradient(180deg, transparent, rgba(12, 154, 161, 0.03), transparent), var(--bg-primary);
   border-top: 1px solid var(--glass-border);
   border-bottom: 1px solid var(--glass-border);
+  overflow: hidden;
 }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 40px;
-  max-width: 1200px;
-  margin: 0 auto;
+.ticker-wrap {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.ticker-wrap::before, .ticker-wrap::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: clamp(60px, 15vw, 200px);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.ticker-wrap::before {
+  left: 0;
+  background: linear-gradient(to right, var(--bg-primary), transparent);
+}
+
+.ticker-wrap::after {
+  right: 0;
+  background: linear-gradient(to left, var(--bg-primary), transparent);
+}
+
+.ticker {
+  display: flex;
+  gap: 80px;
+  width: max-content;
+  align-items: center;
+  animation: ticker-scroll 45s linear infinite;
+}
+
+.ticker:hover {
+  animation-play-state: paused;
+}
+
+@keyframes ticker-scroll {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
+  min-width: 240px;
+  flex-shrink: 0;
 }
 
 .stat-item .stat-value {
   font-family: var(--font-heading);
-  font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
   font-weight: 800;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   white-space: nowrap;
 }
 
 .stat-item .stat-label {
   color: var(--text-secondary);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
+  white-space: nowrap;
 }
 
 /* ---------- Use Cases Section ---------- */
@@ -887,7 +1007,6 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
   #about { flex-direction: column; text-align: center; }
   .about-visual { min-height: 250px; }
 
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .team-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
 
   .footer-top { flex-direction: column; }
@@ -896,8 +1015,6 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
 }
 
 @media (max-width: 600px) {
-  .stats-grid { grid-template-columns: 1fr 1fr; gap: 24px; }
-  
   /* Center feature cards on mobile */
   .feature-card { text-align: center; }
   .feature-icon { margin-left: auto; margin-right: auto; }
