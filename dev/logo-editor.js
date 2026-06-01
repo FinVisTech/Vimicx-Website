@@ -66,18 +66,14 @@
   window.vimicxEditorLogs['logo'] = generateLog;
 
   function copySettings() {
-    if (window.copyAllDevSettings) {
-      window.copyAllDevSettings(copyBtn);
-    } else {
-      const text = generateLog();
-      navigator.clipboard.writeText(text).then(() => {
-        copyBtn.textContent = 'âœ… Copied!';
-        setTimeout(() => { copyBtn.textContent = 'ðŸ“‹ Copy Settings'; }, 2000);
-      }).catch(() => {
-        logOutput.style.display = 'block';
-        logOutput.textContent = text;
-      });
-    }
+    const text = generateLog();
+    navigator.clipboard.writeText(text).then(() => {
+      copyBtn.textContent = 'âœ… Copied!';
+      setTimeout(() => { copyBtn.textContent = 'ðŸ“‹ Copy Settings'; }, 2000);
+    }).catch(() => {
+      logOutput.style.display = 'block';
+      logOutput.textContent = text;
+    });
   }
 
   function showLog() {

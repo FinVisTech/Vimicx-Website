@@ -177,11 +177,12 @@ function buildBoat() {
     boatGroup.add(boatMesh);
 
     // --- BOAT SETTINGS START ---
-    boatGroup.position.set(0.00, -1.00, 0.00);
-    boatGroup.rotation.set(0, 0, 0, 'YXZ');
+    const DEG2RAD = Math.PI / 180;
+    boatGroup.position.set(0.00, 0.30, 0.00);
+    boatGroup.rotation.set(2 * DEG2RAD, 180 * DEG2RAD, 1 * DEG2RAD, 'YXZ');
     boatGroup.scale.set(1.00, 1.00, 1.00);
     const hull = boatGroup.children.find(c => c.name === 'hull');
-    if (hull) hull.material.color.setHex(0x053030);
+    if (hull) hull.material.color.setHex(0x3b0202);
     // --- BOAT SETTINGS END ---
 
     // Now that the STL is loaded, build dependent elements
@@ -377,7 +378,7 @@ function buildTree() {
     treeModelGroup.position.set(8.50, -2.50, 0.90);
     treeModelGroup.rotation.set(0 * DEG2RAD, 0 * DEG2RAD, 0 * DEG2RAD, 'YXZ');
     treeModelGroup.scale.set(0.30, 0.30, 0.30);
-    treeModelGroup.traverse(c => { if(c.material && c.material.color) c.material.color.setHex(0x04ff00); });
+    treeModelGroup.traverse(c => { if (c.material && c.material.color) c.material.color.setHex(0x04ff00); });
     // --- TREE SETTINGS END ---
 
     console.log('Tree wireframe loaded');

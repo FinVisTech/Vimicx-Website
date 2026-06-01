@@ -353,19 +353,15 @@
   window.vimicxEditorLogs['screens'] = generateLog;
 
   function exportToClipboard() {
-    if (window.copyAllDevSettings) {
-      window.copyAllDevSettings(exportBtn);
-    } else {
-      const text = generateLog();
-      navigator.clipboard.writeText(text).then(() => {
-        exportBtn.textContent = '✅ Copied!';
-        setTimeout(() => { exportBtn.textContent = '📋 Copy Log to Clipboard'; }, 2000);
-      }).catch(() => {
-        // Fallback: show in the pre element
-        logOutput.style.display = 'block';
-        logOutput.textContent = text;
-      });
-    }
+    const text = generateLog();
+    navigator.clipboard.writeText(text).then(() => {
+      exportBtn.textContent = '✅ Copied!';
+      setTimeout(() => { exportBtn.textContent = '📋 Copy Log to Clipboard'; }, 2000);
+    }).catch(() => {
+      // Fallback: show in the pre element
+      logOutput.style.display = 'block';
+      logOutput.textContent = text;
+    });
   }
 
   function showLogConsole() {

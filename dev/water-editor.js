@@ -89,18 +89,14 @@
   window.vimicxEditorLogs['water'] = generateLog;
 
   function copySettings() {
-    if (window.copyAllDevSettings) {
-      window.copyAllDevSettings(copyBtn);
-    } else {
-      const text = generateLog();
-      navigator.clipboard.writeText(text).then(() => {
-        copyBtn.textContent = '✅ Copied!';
-        setTimeout(() => { copyBtn.textContent = '📋 Copy Settings'; }, 2000);
-      }).catch(() => {
-        logOutput.style.display = 'block';
-        logOutput.textContent = text;
-      });
-    }
+    const text = generateLog();
+    navigator.clipboard.writeText(text).then(() => {
+      copyBtn.textContent = '✅ Copied!';
+      setTimeout(() => { copyBtn.textContent = '📋 Copy Settings'; }, 2000);
+    }).catch(() => {
+      logOutput.style.display = 'block';
+      logOutput.textContent = text;
+    });
   }
 
   function showLog() {
