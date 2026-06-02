@@ -630,15 +630,97 @@
         <label>FOV <span class="editor-val" id="cv-fov">45°</span></label>
         <input type="range" id="cam-fov" min="10" max="120" step="1" value="45">
       </div>
+      <hr class="editor-sep">
+      <div class="editor-group-label">Camera Path</div>
+      <div class="editor-group">
+        <button id="camera-path-open-scroll-btn" type="button" class="editor-wide-action">Open Scroll Control</button>
+      </div>
+      <div class="editor-group">
+        <label>Selected <span class="editor-val" id="cp-count">0</span></label>
+        <div class="editor-readout" id="cp-selected-label">No keyframe selected</div>
+      </div>
+      <div class="editor-group">
+        <label>Space <span class="editor-val" id="cp-space">world</span></label>
+        <select id="cam-path-space">
+          <option value="world">world</option>
+          <option value="boat">boat-relative</option>
+        </select>
+      </div>
+      <div class="editor-group">
+        <label>Segment Mode <span class="editor-val" id="cp-mode">linear</span></label>
+        <select id="cam-path-mode">
+          <option value="linear">linear</option>
+          <option value="orbit">orbit</option>
+          <option value="spline">spline</option>
+        </select>
+      </div>
+      <div class="editor-group">
+        <label>Boat Lock <span class="editor-val" id="cp-boat-lock">0.00</span></label>
+        <input type="range" id="cam-path-boat-lock" min="0" max="1" step="0.01" value="0">
+      </div>
+      <div class="editor-group">
+        <label>Glasses <span class="editor-val" id="cp-glasses-progress">0.00</span></label>
+        <input type="range" id="cam-path-glasses-progress" min="0" max="1" step="0.01" value="0">
+      </div>
+      <div class="editor-group">
+        <label>Tilt <span class="editor-val" id="cp-glasses-tilt">0.00</span></label>
+        <input type="range" id="cam-path-glasses-tilt" min="0" max="1" step="0.01" value="0">
+      </div>
+      <div class="camera-path-actions">
+        <button id="camera-path-capture-btn" type="button">Capture</button>
+        <button id="camera-path-jump-btn" type="button">Jump</button>
+        <button id="camera-path-preview-segment-btn" type="button">Preview Segment</button>
+        <button id="camera-path-preview-full-btn" type="button">Preview Full</button>
+        <button id="camera-path-reset-btn" type="button">Reset Default</button>
+      </div>
     </div>
 
     <div class="editor-export-row">
       <button id="camera-copy-btn">📋 Copy Coordinates</button>
     </div>
     <div class="editor-export-row">
+      <button id="camera-path-copy-btn">Copy Camera Path</button>
+    </div>
+    <div class="editor-export-row">
       <button id="camera-log-btn">📄 Show in Console</button>
     </div>
     <pre id="camera-log-output" style="display:none;"></pre>
+  </div>
+
+  <div id="camera-scroll-control" class="camera-scroll-control" style="display:none;">
+    <div class="camera-scroll-topbar">
+      <div>
+        <div class="camera-scroll-title">Scroll Control</div>
+        <div class="camera-scroll-subtitle" id="camera-scroll-status">Select a keyframe or segment to edit the camera path.</div>
+      </div>
+      <div class="camera-scroll-actions">
+        <button id="camera-text-add-btn" type="button">+ Text</button>
+        <button id="camera-scroll-preview-full-btn" type="button">Preview Full</button>
+        <button id="camera-scroll-copy-btn" type="button">Copy Path</button>
+        <button id="camera-scroll-close-btn" type="button">Close</button>
+      </div>
+    </div>
+    <div class="camera-scroll-confirm" id="camera-scroll-confirm" style="display:none;">
+      <span id="camera-scroll-confirm-text">Move keyframe?</span>
+      <button id="camera-scroll-accept-btn" type="button">Accept Move</button>
+      <button id="camera-scroll-cancel-btn" type="button">Cancel Move</button>
+    </div>
+    <div class="camera-timeline-wrap">
+      <div class="camera-timeline-scale">
+        <span>0.000</span>
+        <span>0.250</span>
+        <span>0.500</span>
+        <span>0.750</span>
+        <span>1.000</span>
+      </div>
+      <div id="camera-scroll-track" class="camera-scroll-track">
+        <div class="camera-scroll-rail"></div>
+        <div id="camera-scroll-segments" class="camera-scroll-segments"></div>
+        <div id="camera-scroll-keyframes" class="camera-scroll-keyframes"></div>
+        <div id="camera-scroll-playhead" class="camera-scroll-playhead" style="display:none;"></div>
+        <div id="camera-text-bars" class="camera-text-bars"></div>
+      </div>
+    </div>
   </div>
 
   <!-- ===== Scene Editor Panel ===== -->
@@ -977,6 +1059,10 @@
 
   <!-- ===== UNIFIED DEV MENU ===== -->
   <div id="dev-menu-container" style="display:none;">
+    <div id="dev-save-bar" style="display:none;">
+      <button id="dev-save-btn" class="dev-save-btn">💾 Save Changes</button>
+      <button id="dev-cancel-btn" class="dev-cancel-btn">✕ Cancel</button>
+    </div>
     <button id="dev-menu-main-btn" title="Open Dev Tools">🛠️ Dev Tools</button>
     <div id="dev-menu-dropdown" style="display:none;">
       <button id="camera-toggle-btn" class="dev-dropdown-btn">📷 Camera</button>
@@ -1040,6 +1126,10 @@
       }
 
       // Dynamically load dev scripts
+      const saveManagerScript = document.createElement('script');
+      saveManagerScript.src = 'dev/save-manager.js';
+      document.body.appendChild(saveManagerScript);
+
       const screenEditorScript = document.createElement('script');
       screenEditorScript.src = 'dev/screen-editor.js';
       document.body.appendChild(screenEditorScript);
@@ -1047,6 +1137,10 @@
       const cameraEditorScript = document.createElement('script');
       cameraEditorScript.src = 'dev/camera-editor.js';
       document.body.appendChild(cameraEditorScript);
+
+      const textEditorScript = document.createElement('script');
+      textEditorScript.src = 'dev/text-editor.js';
+      document.body.appendChild(textEditorScript);
 
       const bassEditorScript = document.createElement('script');
       bassEditorScript.src = 'dev/bass-editor.js';

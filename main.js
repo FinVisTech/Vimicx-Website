@@ -1,5 +1,5 @@
-/* ============================================
-   VIMICX — Main JavaScript
+﻿/* ============================================
+   VIMICX â€” Main JavaScript
    Three.js 3D Scene + GSAP Scroll Animations
    ============================================ */
 
@@ -9,15 +9,16 @@ let boatGroup, screenMeshes = [], screenEdges = [];
 let wireframeClones = [];
 let fishGroup, fishBody, fishGlow, scanLine;
 let waterPlane, waterGeo;
-let bassModels = []; // Array of Low poly bass models — locked to terrain
+let bassModels = []; // Array of Low poly bass models â€” locked to terrain
 let treeModelGroup; // Low poly tree wireframe
 let ambientLight, dirLight, pointCyan, pointMagenta;
 let glassesGroup, glassesFrame, glassesEdges, glassesLeftArm, glassesRightArm, glassesHUDLeft, glassesHUDRight;
 
-// Dot-grid masking system — renders dots only where no 3D objects are visible
+// Dot-grid masking system â€” renders dots only where no 3D objects are visible
 let maskRenderTarget;
 let editorMode = false;
 let animState = {
+  scrollProgress: 0,
   screenOpacity: 1,
   terrainReveal: 0,
   fishVisibility: 0,
@@ -40,19 +41,39 @@ let animState = {
   fov: window.innerWidth < 768 ? 75 : 45
 };
 
-// Boat-local camera offsets — these define WHERE on the boat the camera sits
+// Boat-local camera offsets â€” these define WHERE on the boat the camera sits
 // and WHERE it looks, in the boat's own coordinate frame.
-// Derived from exported Vimicx Camera Coordinates (yaw 90°, pitch -45°).
+// Derived from exported Vimicx Camera Coordinates (yaw 90Â°, pitch -45Â°).
 const CAM_LOCAL_POS = new THREE.Vector3(1.7, 2.1, 0.0);
 const CAM_LOCAL_LOOKAT = new THREE.Vector3(8.77, -4.97, 0.0);
 const BOAT_TARGET_YAW = 0; // target yaw angle for the cinematic camera shot
+const TRANSFORMATION_SCROLL_DISTANCE = 4500;
+let cameraProgressTrigger = null;
+let cameraPathOverride = null;
+let cameraPathCache = null;
+let cameraPathCacheKey = '';
 let clock;
+
+// ===== TEXT CONFIG =====
+const DEFAULT_TEXT_CONFIG = [
+  { id: 't-hero',   elementId: 'hero-content', section: 'hero',      label: 'See Through Water',  dynamic: false, content: '', start: 0,    fullyVisible: 0,    fadeOutStart: 0,    end: 1    },
+  { id: 't-text-1', elementId: 't-text-1',     section: 'transform', label: 'Too many screens',   dynamic: false, content: '', start: 0.04, fullyVisible: 0.10, fadeOutStart: 0.16, end: 0.20 },
+  { id: 't-text-2', elementId: 't-text-2',     section: 'transform', label: 'Not Anymore',        dynamic: false, content: '', start: 0.25, fullyVisible: 0.31, fadeOutStart: 0.42, end: 0.46 },
+  { id: 't-text-3', elementId: 't-text-3',     section: 'transform', label: 'See the difference', dynamic: false, content: '', start: 0.63, fullyVisible: 0.69, fadeOutStart: 0.80, end: 0.86 }
+];
+let textConfig = DEFAULT_TEXT_CONFIG.map(i => ({ ...i }));
+
+// Screen-flicker timing (transform-local 0-1, default matches original GSAP)
+let flickerConfig = { start: 0.0, end: 0.16 };
+
+// Glasses rise timing (transform-local 0-1; decoupled from camera path keyframes)
+let glassesRiseConfig = { start: 0.38, end: 0.63 };
 
 // ===== INIT =====
 function init() {
   clock = new THREE.Clock();
 
-  // Renderer — opaque background so dot grid plane is visible behind objects
+  // Renderer â€” opaque background so dot grid plane is visible behind objects
   const canvas = document.getElementById('three-canvas');
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, stencil: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -222,16 +243,16 @@ function buildBoat() {
 
 // ===== SCREENS =====
 function buildScreens() {
-  // Positions from user's editor log — rotations fixed so screens face
+  // Positions from user's editor log â€” rotations fixed so screens face
   // the stern (-X direction) and tilt upward toward the operator.
   //
   // A PlaneGeometry faces +Z by default. To face the stern (-X):
-  //   rotY = +π/2  (turns the normal from +Z toward -X)
+  //   rotY = +Ï€/2  (turns the normal from +Z toward -X)
   // Then tilt the top of the screen backward (upward angle):
-  //   rotX = negative value (e.g. -0.3 = ~17° upward tilt)
+  //   rotX = negative value (e.g. -0.3 = ~17Â° upward tilt)
 
   // Exact positions and rotations from user's editor session.
-  // All screens face stern (-X) via rotY ≈ π/2, tilted upward via rotX.
+  // All screens face stern (-X) via rotY â‰ˆ Ï€/2, tilted upward via rotX.
 
   // --- SCREEN SETTINGS START ---
   const screenDefs = [
@@ -291,7 +312,7 @@ function buildScreens() {
   });
 }
 
-// ===== WIREFRAME CLONES (disabled — boat stays solid) =====
+// ===== WIREFRAME CLONES (disabled â€” boat stays solid) =====
 function buildWireframeClones() {
   // No longer creating wireframe clones of the boat hull.
   // The boat remains solid throughout the entire animation.
@@ -544,7 +565,7 @@ function buildGlasses() {
   glassesGroup.visible = false;
 }
 
-// ===== FISH (Low Poly Bass — Loaded as Pre-computed Wireframe OBJ) =====
+// ===== FISH (Low Poly Bass â€” Loaded as Pre-computed Wireframe OBJ) =====
 function buildFish() {
   // --- BASS SETTINGS START ---
   const DEG2RAD = Math.PI / 180;
@@ -746,7 +767,7 @@ function buildWater() {
   terrainEdges.name = 'terrain_edges';
   terrainAnchor.add(terrainEdges);
 
-  // Terrain contours removed — permanently disabled, generated ~2000 points for no visual effect
+  // Terrain contours removed â€” permanently disabled, generated ~2000 points for no visual effect
 }
 
 // ===== PARTICLES =====
@@ -783,6 +804,573 @@ function setupImageSlider() {
   });
 }
 
+// ===== SCROLL CAMERA PATH =====
+function clamp01(value) {
+  return Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
+}
+
+function lerpNumber(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function shortestAngleDelta(a, b) {
+  let delta = b - a;
+  while (delta > Math.PI) delta -= Math.PI * 2;
+  while (delta < -Math.PI) delta += Math.PI * 2;
+  return delta;
+}
+
+function isCameraToolActive() {
+  return Boolean(window.cameraEditorActive || window.cameraPathEditorActive);
+}
+
+function invalidateCameraPathCache() {
+  cameraPathCache = null;
+  cameraPathCacheKey = '';
+}
+
+function getCameraTrackDistance() {
+  return window.innerHeight + TRANSFORMATION_SCROLL_DISTANCE;
+}
+
+function getHeroPathEndProgress() {
+  return clamp01(window.innerHeight / getCameraTrackDistance());
+}
+
+function transformPathProgress(transformProgress) {
+  const heroEnd = getHeroPathEndProgress();
+  return heroEnd + (1 - heroEnd) * clamp01(transformProgress);
+}
+
+function vecData(x, y, z) {
+  return { x, y, z };
+}
+
+function readVecData(source, fallback = { x: 0, y: 0, z: 0 }) {
+  if (Array.isArray(source)) {
+    return vecData(Number(source[0]) || fallback.x, Number(source[1]) || fallback.y, Number(source[2]) || fallback.z);
+  }
+  if (source && typeof source === 'object') {
+    return vecData(
+      Number.isFinite(Number(source.x)) ? Number(source.x) : fallback.x,
+      Number.isFinite(Number(source.y)) ? Number(source.y) : fallback.y,
+      Number.isFinite(Number(source.z)) ? Number(source.z) : fallback.z
+    );
+  }
+  return vecData(fallback.x, fallback.y, fallback.z);
+}
+
+function toVector3(data) {
+  return new THREE.Vector3(data.x, data.y, data.z);
+}
+
+function cloneCameraPath(path) {
+  return path.map(frame => ({
+    id: frame.id,
+    label: frame.label,
+    progress: frame.progress,
+    space: frame.space,
+    mode: frame.mode,
+    position: vecData(frame.position.x, frame.position.y, frame.position.z),
+    target: vecData(frame.target.x, frame.target.y, frame.target.z),
+    orbitCenter: frame.orbitCenter ? vecData(frame.orbitCenter.x, frame.orbitCenter.y, frame.orbitCenter.z) : undefined,
+    fov: frame.fov,
+    boatLock: frame.boatLock,
+    glassesProgress: frame.glassesProgress,
+    glassesTilt: frame.glassesTilt
+  }));
+}
+
+function normalizeCameraFrame(frame, index) {
+  const initialFov = window.innerWidth < 768 ? 75 : 45;
+  return {
+    id: frame.id || `keyframe-${index + 1}`,
+    label: frame.label || frame.id || `Keyframe ${index + 1}`,
+    progress: clamp01(Number(frame.progress)),
+    space: frame.space === 'boat' || frame.space === 'boat-relative' ? 'boat' : 'world',
+    mode: ['orbit', 'spline', 'linear'].includes(frame.mode) ? frame.mode : 'linear',
+    position: readVecData(frame.position, vecData(0, 3, 8)),
+    target: readVecData(frame.target, vecData(0, 0.3, 0)),
+    orbitCenter: frame.orbitCenter ? readVecData(frame.orbitCenter) : undefined,
+    fov: Number.isFinite(Number(frame.fov)) ? Number(frame.fov) : initialFov,
+    boatLock: clamp01(Number(frame.boatLock ?? frame.cameraLockedToBoat ?? 0)),
+    glassesProgress: clamp01(Number(frame.glassesProgress ?? 0)),
+    glassesTilt: clamp01(Number(frame.glassesTilt ?? frame.glassesTiltUp ?? 0))
+  };
+}
+
+function normalizeCameraPath(frames) {
+  return frames
+    .map(normalizeCameraFrame)
+    .sort((a, b) => a.progress - b.progress)
+    .map((frame, index, arr) => {
+      if (index > 0 && frame.progress <= arr[index - 1].progress) {
+        frame.progress = Math.min(1, arr[index - 1].progress + 0.0001);
+      }
+      return frame;
+    });
+}
+
+function buildDefaultCameraPath() {
+  const heroEnd = getHeroPathEndProgress();
+  const tp = transformPathProgress;
+  const initialFov = window.innerWidth < 768 ? 75 : 45;
+  const cockpitFov = window.innerWidth < 768 ? 120 : 70;
+
+  return normalizeCameraPath([
+    {
+      id: 'hero-start',
+      label: 'Hero Start',
+      progress: 0,
+      space: 'world',
+      mode: 'orbit',
+      orbitCenter: vecData(0, 0.4, 0),
+      position: vecData(0, 3, 8),
+      target: vecData(0, 0.3, 0),
+      fov: initialFov
+    },
+    {
+      id: 'hero-orbit-mid',
+      label: 'Hero Orbit',
+      progress: heroEnd * 0.5,
+      space: 'world',
+      mode: 'orbit',
+      orbitCenter: vecData(0, 0.4, 0),
+      position: vecData(-1.2, 2.9, 6.2),
+      target: vecData(0.8, 0.4, 0),
+      fov: initialFov
+    },
+    {
+      id: 'hero-orbit-end',
+      label: 'Stern Orbit',
+      progress: heroEnd,
+      space: 'world',
+      mode: 'spline',
+      position: vecData(-2.5, 2.75, 3.5),
+      target: vecData(1.3, 0.6, 0),
+      fov: initialFov
+    },
+    {
+      id: 'stern-wide',
+      label: 'Wide Stern',
+      progress: tp(0.20),
+      space: 'world',
+      mode: 'spline',
+      position: vecData(-3.5, 2.7, 0),
+      target: vecData(1.7, 0.8, 0),
+      fov: initialFov
+    },
+    {
+      id: 'cockpit-approach',
+      label: 'Cockpit Approach',
+      progress: tp(0.33),
+      space: 'boat',
+      mode: 'linear',
+      position: vecData(CAM_LOCAL_POS.x, CAM_LOCAL_POS.y, CAM_LOCAL_POS.z),
+      target: vecData(CAM_LOCAL_LOOKAT.x, CAM_LOCAL_LOOKAT.y, CAM_LOCAL_LOOKAT.z),
+      fov: cockpitFov,
+      boatLock: 1
+    },
+    {
+      id: 'glasses-pov',
+      label: 'Glasses POV',
+      progress: tp(0.63),
+      space: 'boat',
+      mode: 'linear',
+      position: vecData(CAM_LOCAL_POS.x, CAM_LOCAL_POS.y, CAM_LOCAL_POS.z),
+      target: vecData(CAM_LOCAL_LOOKAT.x, CAM_LOCAL_LOOKAT.y, CAM_LOCAL_LOOKAT.z),
+      fov: cockpitFov,
+      boatLock: 1,
+      glassesProgress: 1
+    },
+    {
+      id: 'final-tilt',
+      label: 'Final Tilt',
+      progress: tp(0.92),
+      space: 'boat',
+      mode: 'linear',
+      position: vecData(CAM_LOCAL_POS.x, CAM_LOCAL_POS.y, CAM_LOCAL_POS.z),
+      target: vecData(CAM_LOCAL_LOOKAT.x, CAM_LOCAL_LOOKAT.y + 3.5, CAM_LOCAL_LOOKAT.z),
+      fov: cockpitFov,
+      boatLock: 1,
+      glassesProgress: 1,
+      glassesTilt: 1
+    },
+    {
+      id: 'outro',
+      label: 'Outro',
+      progress: 1,
+      space: 'boat',
+      mode: 'linear',
+      position: vecData(CAM_LOCAL_POS.x, CAM_LOCAL_POS.y, CAM_LOCAL_POS.z),
+      target: vecData(CAM_LOCAL_LOOKAT.x, CAM_LOCAL_LOOKAT.y + 3.5, CAM_LOCAL_LOOKAT.z),
+      fov: cockpitFov,
+      boatLock: 1,
+      glassesProgress: 1,
+      glassesTilt: 1
+    }
+  ]);
+}
+
+function getCameraPath() {
+  if (cameraPathOverride) return cameraPathOverride;
+  const key = `${window.innerWidth}x${window.innerHeight}`;
+  if (!cameraPathCache || cameraPathCacheKey !== key) {
+    cameraPathCache = buildDefaultCameraPath();
+    cameraPathCacheKey = key;
+  }
+  return cameraPathCache;
+}
+
+function resolveCameraFrame(frame) {
+  const position = toVector3(frame.position);
+  const target = toVector3(frame.target);
+
+  if (frame.space === 'boat' && boatGroup) {
+    boatGroup.updateMatrixWorld();
+    position.applyMatrix4(boatGroup.matrixWorld);
+    target.applyMatrix4(boatGroup.matrixWorld);
+  }
+
+  return { position, target };
+}
+
+function resolveOrbitCenter(frame) {
+  const center = toVector3(frame.orbitCenter || vecData(0, 0.4, 0));
+  if (frame.space === 'boat' && boatGroup) {
+    boatGroup.updateMatrixWorld();
+    center.applyMatrix4(boatGroup.matrixWorld);
+  }
+  return center;
+}
+
+function interpolateLinearVector(a, b, key, t) {
+  const aPose = resolveCameraFrame(a);
+  const bPose = resolveCameraFrame(b);
+  return aPose[key].lerp(bPose[key], t);
+}
+
+function interpolateOrbitVector(a, b, key, t) {
+  if (key === 'target') return interpolateLinearVector(a, b, key, t);
+
+  const aPose = resolveCameraFrame(a);
+  const bPose = resolveCameraFrame(b);
+  const center = resolveOrbitCenter(a.orbitCenter ? a : b);
+  const start = new THREE.Spherical().setFromVector3(aPose.position.clone().sub(center));
+  const end = new THREE.Spherical().setFromVector3(bPose.position.clone().sub(center));
+  const theta = start.theta + shortestAngleDelta(start.theta, end.theta) * t;
+  const spherical = new THREE.Spherical(
+    lerpNumber(start.radius, end.radius, t),
+    lerpNumber(start.phi, end.phi, t),
+    theta
+  );
+
+  return new THREE.Vector3().setFromSpherical(spherical).add(center);
+}
+
+function interpolateSplineVector(path, index, key, t) {
+  const prev = path[Math.max(0, index - 1)];
+  const a = path[index];
+  const b = path[index + 1];
+  const next = path[Math.min(path.length - 1, index + 2)];
+  const points = [prev, a, b, next].map(frame => resolveCameraFrame(frame)[key]);
+  const curve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.5);
+  return curve.getPoint((1 + t) / 3);
+}
+
+function interpolateCameraVector(path, index, key, t) {
+  const mode = path[index].mode || 'linear';
+  if (mode === 'orbit') return interpolateOrbitVector(path[index], path[index + 1], key, t);
+  if (mode === 'spline') return interpolateSplineVector(path, index, key, t);
+  return interpolateLinearVector(path[index], path[index + 1], key, t);
+}
+
+function evaluateCameraPath(progress, path = getCameraPath()) {
+  const p = clamp01(progress);
+  if (path.length === 1 || p <= path[0].progress) {
+    const pose = resolveCameraFrame(path[0]);
+    return { ...pose, frame: path[0], fov: path[0].fov, boatLock: path[0].boatLock, glassesProgress: path[0].glassesProgress, glassesTilt: path[0].glassesTilt };
+  }
+
+  const last = path[path.length - 1];
+  if (p >= last.progress) {
+    const pose = resolveCameraFrame(last);
+    return { ...pose, frame: last, fov: last.fov, boatLock: last.boatLock, glassesProgress: last.glassesProgress, glassesTilt: last.glassesTilt };
+  }
+
+  let index = 0;
+  for (let i = 0; i < path.length - 1; i++) {
+    if (p >= path[i].progress && p <= path[i + 1].progress) {
+      index = i;
+      break;
+    }
+  }
+
+  const a = path[index];
+  const b = path[index + 1];
+  const span = Math.max(0.0001, b.progress - a.progress);
+  const t = clamp01((p - a.progress) / span);
+
+  return {
+    position: interpolateCameraVector(path, index, 'position', t),
+    target: interpolateCameraVector(path, index, 'target', t),
+    frame: a,
+    nextFrame: b,
+    localProgress: t,
+    fov: lerpNumber(a.fov, b.fov, t),
+    boatLock: lerpNumber(a.boatLock, b.boatLock, t),
+    glassesProgress: lerpNumber(a.glassesProgress, b.glassesProgress, t),
+    glassesTilt: lerpNumber(a.glassesTilt, b.glassesTilt, t)
+  };
+}
+
+function applyCameraPose(pose) {
+  if (!camera || !pose) return;
+
+  camera.position.copy(pose.position);
+  if (!updateScene._smoothLookAt) {
+    updateScene._smoothLookAt = new THREE.Vector3();
+  }
+  updateScene._smoothLookAt.copy(pose.target);
+  camera.lookAt(updateScene._smoothLookAt);
+
+  if (Math.abs(camera.fov - pose.fov) > 0.01) {
+    camera.fov = pose.fov;
+    camera.updateProjectionMatrix();
+  }
+
+  animState.cameraX = pose.position.x;
+  animState.cameraY = pose.position.y;
+  animState.cameraZ = pose.position.z;
+  animState.lookAtX = pose.target.x;
+  animState.lookAtY = pose.target.y;
+  animState.lookAtZ = pose.target.z;
+  animState.fov = pose.fov;
+  animState.cameraLockedToBoat = pose.boatLock;
+  if (!glassesRiseConfig) animState.glassesProgress = pose.glassesProgress;
+  animState.glassesTiltUp = pose.glassesTilt;
+}
+
+function applyScrollCameraPath() {
+  if (editorMode || isCameraToolActive()) return;
+  applyCameraPose(evaluateCameraPath(animState.scrollProgress));
+}
+
+window.vimicxCameraPath = {
+  getPath: () => cloneCameraPath(getCameraPath()),
+  getDefaultPath: () => cloneCameraPath(buildDefaultCameraPath()),
+  setPath: (frames) => {
+    cameraPathOverride = normalizeCameraPath(frames);
+    return cloneCameraPath(cameraPathOverride);
+  },
+  clearPathOverride: () => {
+    cameraPathOverride = null;
+    invalidateCameraPathCache();
+  },
+  hasOverride: () => Boolean(cameraPathOverride),
+  evaluate: (progress) => evaluateCameraPath(progress),
+  resolveFrame: (frame) => resolveCameraFrame(normalizeCameraFrame(frame, 0)),
+  applyPose: applyCameraPose,
+  getProgress: () => animState.scrollProgress,
+  setProgress: (progress) => {
+    animState.scrollProgress = clamp01(progress);
+    applyCameraPose(evaluateCameraPath(animState.scrollProgress));
+  }
+};
+
+// ===== TEXT CONFIG API =====
+function normalizeTextItem(item, index) {
+  return {
+    id: item.id || ('t-dyn-' + (index || Date.now())),
+    elementId: item.elementId || item.id || ('t-dyn-' + Date.now()),
+    section: item.section === 'hero' ? 'hero' : 'transform',
+    label: item.label || 'Text',
+    dynamic: Boolean(item.dynamic),
+    content: item.content || '',
+    start:        clamp01(Number(item.start)        || 0),
+    fullyVisible: clamp01(Number(item.fullyVisible) || 0),
+    fadeOutStart: clamp01(Number(item.fadeOutStart) || 0),
+    end:          clamp01(Number(item.end)          || 0)
+  };
+}
+
+function initDynamicTextElements(items) {
+  const overlay = document.querySelector('#transformation .transform-overlay');
+  if (!overlay) return;
+  items.filter(i => i.dynamic && i.content).forEach(item => {
+    if (!document.getElementById(item.elementId)) {
+      const div = document.createElement('div');
+      div.id = item.elementId;
+      div.className = 'transform-text';
+      div.innerHTML = `<h2>${item.content}</h2>`;
+      div.style.opacity = '0';
+      overlay.appendChild(div);
+    }
+  });
+}
+
+function textItemEl(item) {
+  return document.getElementById(item.elementId) ||
+         (item.elementId === 'hero-content' ? document.querySelector('.hero-content') : null);
+}
+
+function textItemOpacity(p, s, fv, fo, e) {
+  if (p < s || p > e) return 0;
+  if (fv > s && p <= fv) return (p - s) / (fv - s);
+  if (p <= fo) return 1;
+  if (fo < e) return 1 - (p - fo) / (e - fo);
+  return 1;
+}
+
+function updateTextVisibility() {
+  if (!textConfig) return;
+  const p = animState.scrollProgress;
+  const he = getHeroPathEndProgress();
+  textConfig.forEach(item => {
+    const el = textItemEl(item);
+    if (!el) return;
+    let s, fv, fo, e;
+    if (item.section === 'hero') {
+      s = he * item.start; fv = he * item.fullyVisible;
+      fo = he * item.fadeOutStart; e = he * item.end;
+    } else {
+      const tp = x => he + (1 - he) * x;
+      s = tp(item.start); fv = tp(item.fullyVisible);
+      fo = tp(item.fadeOutStart); e = tp(item.end);
+    }
+    el.style.opacity = textItemOpacity(p, s, fv, fo, e);
+  });
+}
+
+window.vimicxTextConfig = {
+  getItems: () => JSON.parse(JSON.stringify(textConfig)),
+  setItems: (items) => {
+    textConfig = items.map(normalizeTextItem);
+    if (window.vimicxTextEditorRefresh) window.vimicxTextEditorRefresh();
+  },
+  getDefaultItems: () => JSON.parse(JSON.stringify(DEFAULT_TEXT_CONFIG)),
+  getHeroEnd: () => getHeroPathEndProgress(),
+  toCameraProgress: (item) => {
+    const he = getHeroPathEndProgress();
+    if (item.section === 'hero') {
+      return { start: he * item.start, fullyVisible: he * item.fullyVisible, fadeOutStart: he * item.fadeOutStart, end: he * item.end };
+    }
+    const tp = x => he + (1 - he) * x;
+    return { start: tp(item.start), fullyVisible: tp(item.fullyVisible), fadeOutStart: tp(item.fadeOutStart), end: tp(item.end) };
+  },
+  fromCameraProgress: (item, cp) => {
+    const he = getHeroPathEndProgress();
+    if (item.section === 'hero') {
+      const d = he > 0 ? he : 1;
+      return { start: cp.start / d, fullyVisible: cp.fullyVisible / d, fadeOutStart: cp.fadeOutStart / d, end: cp.end / d };
+    }
+    const inv = x => he < 1 ? clamp01((x - he) / (1 - he)) : 0;
+    return { start: inv(cp.start), fullyVisible: inv(cp.fullyVisible), fadeOutStart: inv(cp.fadeOutStart), end: inv(cp.end) };
+  },
+  addItem: (partial) => {
+    const id = 't-dyn-' + Date.now();
+    const item = normalizeTextItem({ ...partial, id, elementId: id, dynamic: true, content: partial.content || partial.label || 'Text' });
+    if (item.section === 'transform') {
+      const overlay = document.querySelector('#transformation .transform-overlay');
+      if (overlay && !document.getElementById(id)) {
+        const div = document.createElement('div');
+        div.id = id; div.className = 'transform-text';
+        div.innerHTML = `<h2 contenteditable="plaintext-only">${item.content}</h2>`;
+        div.style.opacity = '0';
+        overlay.appendChild(div);
+      }
+    }
+    textConfig = [...textConfig, item];
+    return JSON.parse(JSON.stringify(item));
+  },
+  removeItem: (id) => {
+    const item = textConfig.find(i => i.id === id);
+    if (item) {
+      const el = textItemEl(item);
+      if (el) el.style.opacity = '0';
+      if (item.dynamic) { const el2 = document.getElementById(id); if (el2) el2.remove(); }
+    }
+    textConfig = textConfig.filter(i => i.id !== id);
+  }
+};
+
+// Flicker step table — relative positions within the flicker window (0-1)
+const FLICKER_STEPS = [
+  { end: 0.250, from: 1.0, to: 0.3 },
+  { end: 0.344, from: 0.3, to: 0.8 },
+  { end: 0.500, from: 0.8, to: 0.1 },
+  { end: 0.594, from: 0.1, to: 0.6 },
+  { end: 1.000, from: 0.6, to: 0.0 }
+];
+
+function updateFlicker() {
+  const p  = animState.scrollProgress;
+  const he = getHeroPathEndProgress();
+  const tp = x => he + (1 - he) * x;
+  const fs = tp(flickerConfig.start);
+  const fe = tp(flickerConfig.end);
+
+  if (p < fs)  { animState.screenOpacity = 1; return; }
+  if (p >= fe) { animState.screenOpacity = 0; return; }
+
+  const localT = (p - fs) / Math.max(0.0001, fe - fs);
+  let prev = 0;
+  for (const step of FLICKER_STEPS) {
+    if (localT <= step.end) {
+      animState.screenOpacity = step.from + (step.to - step.from) * ((localT - prev) / (step.end - prev));
+      return;
+    }
+    prev = step.end;
+  }
+  animState.screenOpacity = 0;
+}
+
+window.vimicxFlickerConfig = {
+  get: () => ({ ...flickerConfig }),
+  set: (cfg) => { flickerConfig = { start: clamp01(cfg.start), end: clamp01(cfg.end) }; }
+};
+
+function updateGlassesRise() {
+  if (!glassesRiseConfig) return;
+  const p  = animState.scrollProgress;
+  const he = getHeroPathEndProgress();
+  const tp = x => he + (1 - he) * x;
+  const gs = tp(glassesRiseConfig.start);
+  const ge = tp(glassesRiseConfig.end);
+  if (p <= gs) { animState.glassesProgress = 0; return; }
+  if (p >= ge) { animState.glassesProgress = 1; return; }
+  animState.glassesProgress = (p - gs) / Math.max(0.0001, ge - gs);
+}
+
+window.vimicxGlassesRise = {
+  get: () => ({ ...glassesRiseConfig }),
+  set: (cfg) => { glassesRiseConfig = { start: clamp01(cfg.start), end: clamp01(cfg.end) }; }
+};
+
+async function loadSceneConfig() {
+  try {
+    const resp = await fetch('./scene-config.json?_=' + Date.now());
+    if (!resp.ok) throw new Error('missing');
+    const data = await resp.json();
+    if (data.cameraPath && Array.isArray(data.cameraPath)) {
+      cameraPathOverride = normalizeCameraPath(data.cameraPath);
+    }
+    if (data.textItems && Array.isArray(data.textItems)) {
+      textConfig = data.textItems.map(normalizeTextItem);
+      initDynamicTextElements(textConfig);
+    }
+    if (data.screenFlicker) flickerConfig = { start: clamp01(data.screenFlicker.start), end: clamp01(data.screenFlicker.end) };
+    if (data.glassesRise)  glassesRiseConfig = { start: clamp01(data.glassesRise.start),  end: clamp01(data.glassesRise.end)  };
+    const snap = { cameraPath: data.cameraPath || null, textItems: JSON.parse(JSON.stringify(textConfig)), screenFlicker: { ...flickerConfig }, glassesRise: { ...glassesRiseConfig } };
+    if (window.vimicxSetSavedSnapshot) window.vimicxSetSavedSnapshot(snap);
+    else window._pendingSavedSnapshot = snap;
+  } catch (_) {
+    const snap = { cameraPath: null, textItems: JSON.parse(JSON.stringify(DEFAULT_TEXT_CONFIG)), screenFlicker: { ...flickerConfig }, glassesRise: { ...glassesRiseConfig } };
+    if (window.vimicxSetSavedSnapshot) window.vimicxSetSavedSnapshot(snap);
+    else window._pendingSavedSnapshot = snap;
+  }
+}
+
 // ===== SCROLL ANIMATIONS =====
 function setupScrollAnimations() {
   gsap.registerPlugin(ScrollTrigger);
@@ -795,7 +1383,7 @@ function setupScrollAnimations() {
       end: 'bottom top',
       scrub: true
     },
-    opacity: 0, y: -120
+    y: -120
   });
 
   gsap.to('.scroll-indicator', {
@@ -808,37 +1396,20 @@ function setupScrollAnimations() {
     opacity: 0
   });
 
-  // Camera orbits smoothly to the left in a wide arc (0-100% of #hero scroll)
-  // Starts the instant the user begins scrolling, making the 90-degree stern orbit extremely slow, smooth, and majestic
-  const heroCamTimeline = gsap.timeline({
-    scrollTrigger: {
-      trigger: '#hero',
-      start: 'top top',
-      end: 'bottom top',
-      scrub: true, // Direct mapping since Lenis handles smooth scrolling; eliminates boundary tug-of-war!
-      overwrite: 'auto' // Let GSAP automatically override competing properties cleanly
+  // Single camera authority: scroll updates one progress value, and updateScene
+  // evaluates the camera path from that value every frame.
+  cameraProgressTrigger = ScrollTrigger.create({
+    trigger: '#hero',
+    start: 'top top',
+    end: () => `+=${getCameraTrackDistance()}`,
+    invalidateOnRefresh: true,
+    onUpdate: (self) => {
+      animState.scrollProgress = self.progress;
+    },
+    onRefresh: (self) => {
+      invalidateCameraPathCache();
+      animState.scrollProgress = self.progress;
     }
-  });
-
-  heroCamTimeline.to(animState, {
-    cameraX: -1.2,
-    cameraZ: 6.2,
-    cameraY: 2.9,
-    lookAtX: 0.8,
-    lookAtY: 0.4,
-    lookAtZ: 0,
-    duration: 0.5,
-    ease: 'none'
-  })
-  .to(animState, {
-    cameraX: -2.5,
-    cameraZ: 3.5,
-    cameraY: 2.75,
-    lookAtX: 1.3,
-    lookAtY: 0.6,
-    lookAtZ: 0,
-    duration: 0.5,
-    ease: 'none'
   });
 
   // ===== TRANSFORMATION TIMELINE =====
@@ -847,78 +1418,33 @@ function setupScrollAnimations() {
       trigger: '#transformation',
       start: 'top top',
       end: '+=4500',
-      scrub: 1,
+      scrub: true,
       pin: true,
-      anticipatePin: 1,
-      overwrite: 'auto',
-      onEnter: () => tl.invalidate(), // Invalidate only when entering from the top to capture correct camera start coordinates
-      onLeaveBack: () => tl.invalidate() // Clear cached values on upward scroll to prevent snaps
+      anticipatePin: 1
     }
   });
 
-  // Phase 1: Camera continues its slow left orbit (stern wide shot) until problem text dissolves (0-20%)
-  tl.to(animState, {
-    cameraX: -3.5,
-    cameraZ: 0.0,
-    cameraY: 2.7,
-    lookAtX: 1.7,
-    lookAtY: 0.8,
-    lookAtZ: 0,
-    duration: 0.20,
-    ease: 'none'
-  }, 0.00);
+  // screenOpacity flicker driven by updateFlicker() via flickerConfig
 
-  // Screens flicker and fade (0-20%)
-  tl.to(animState, { screenOpacity: 0.3, duration: 0.04 }, 0.00)
-    .to(animState, { screenOpacity: 0.8, duration: 0.015 })
-    .to(animState, { screenOpacity: 0.1, duration: 0.025 })
-    .to(animState, { screenOpacity: 0.6, duration: 0.015 })
-    .to(animState, { screenOpacity: 0, duration: 0.065 });
+  // t-text-1 opacity driven by updateTextVisibility() via textConfig
 
-  // Show problem text
-  tl.to('#t-text-1', { opacity: 1, duration: 0.06 }, 0.04)
-    .to('#t-text-1', { opacity: 0, duration: 0.04 }, 0.16);
-
-  // Phase 2: Terrain wiremesh topology revealed (20-60%) — extended dwell time
+  // Phase 2: Terrain wiremesh topology revealed (20-60%) â€” extended dwell time
   // Pulls the camera smoothly onto the deck / cockpit and pivots forward down the bow (20-33%)
-  tl.to(animState, { terrainReveal: 1, duration: 0.20 }, 0.20)
-    .to(animState, { fov: window.innerWidth < 768 ? 120 : 70, duration: 0.15, ease: 'power2.inOut' }, 0.20)
-    .to(animState, {
-      cameraX: 1.7,
-      cameraZ: 0.0,
-      cameraY: 2.4,
-      lookAtX: 8.77,
-      lookAtY: -4.67,
-      lookAtZ: 0,
-      duration: 0.13,
-      ease: 'power2.inOut'
-    }, 0.20);
+  tl.to(animState, { terrainReveal: 1, duration: 0.20 }, 0.20);
 
-  // Show solution text
-  tl.to('#t-text-2', { opacity: 1, duration: 0.06 }, 0.25)
-    .to('#t-text-2', { opacity: 0, duration: 0.04 }, 0.42);
-
-  // Animate the glasses frame coming onto the camera POV (from 33% to 63%)
-  tl.to(animState, { glassesProgress: 1, duration: 0.30, ease: 'power2.out' }, 0.33);
+  // t-text-2 opacity driven by updateTextVisibility() via textConfig
 
   // Slow the boat spin and begin smooth alignment to cinematic angle
   tl.to(animState, { boatRotSpeed: 0, duration: 0.10, ease: 'power2.out' }, 0.28);
   // Smoothly steer the boat toward BOAT_TARGET_YAW (shortest arc, handled in updateScene)
   tl.to(animState, { boatAlignToTarget: 1, duration: 0.18, ease: 'power3.inOut' }, 0.30);
 
-  // Lock camera to boat — starts earlier so it finishes before fish/tree appear
-  tl.to(animState, { cameraLockedToBoat: 1, duration: 0.15, ease: 'power2.inOut' }, 0.36);
-
-  // Phase 3: Fish reveal — starts early with terrain reveal so they are already fully there before glasses rise
+  // Lock camera to boat â€” starts earlier so it finishes before fish/tree appear
+  // Phase 3: Fish reveal â€” starts early with terrain reveal so they are already fully there before glasses rise
   tl.to(animState, { fishVisibility: 1, duration: 0.13 }, 0.20)
     .to(animState, { scanLinePos: 3, duration: 0.12 }, 0.65);
 
-  // Show fish text ("See things differently")
-  tl.to('#t-text-3', { opacity: 1, duration: 0.06 }, 0.63)
-    .to('#t-text-3', { opacity: 0, duration: 0.06 }, 0.80);
-
-  // Smoothly tilt glasses and camera up when the third text starts to dissolve (0.80 to 0.92)
-  tl.to(animState, { glassesTiltUp: 1, duration: 0.12, ease: 'power1.inOut' }, 0.80);
+  // t-text-3 opacity driven by updateTextVisibility() via textConfig
 
   // Phase 4: Tree reveal (same early timing as fish)
   tl.to(animState, { treeVisibility: 1, duration: 0.13 }, 0.20);
@@ -927,7 +1453,7 @@ function setupScrollAnimations() {
   tl.to(animState, { treeVisibility: 0, duration: 0.08, ease: 'power2.in' }, 0.92);
   tl.to(animState, { fishVisibility: 0, duration: 0.08, ease: 'power2.in' }, 0.92);
   tl.to(animState, { terrainReveal: 0, duration: 0.08, ease: 'power2.in' }, 0.92);
-  // Canvas fades to transparent last (92-100%) — no black, scene dissolves away
+  // Canvas fades to transparent last (92-100%) â€” no black, scene dissolves away
   tl.to(animState, { canvasOpacity: 0, duration: 0.08, ease: 'power1.in' }, 0.92);
 
   // ===== CONTENT SECTION CANVAS FADE =====
@@ -1016,13 +1542,13 @@ function updateScene() {
 
   // In editor mode, skip auto-rotation and camera overrides
   if (!editorMode) {
-    // Boat rides the waves — freeze ALL motion when camera or boat editor is active
-    if (boatGroup && !window.cameraEditorActive && !window.boatEditorActive) {
+    // Boat rides the waves â€” freeze ALL motion when camera or boat editor is active
+    if (boatGroup && !isCameraToolActive() && !window.boatEditorActive) {
       // Sample wave at boat origin and nearby points for slope
       const bx = 0, bz = 0; // boat center in local coords
       const sampleDist = 1.5; // distance to sample for tilt
 
-      // Fade wave motion out as terrain reveals — camera is locked to boat, so any
+      // Fade wave motion out as terrain reveals â€” camera is locked to boat, so any
       // Y-bob or pitch/roll makes the fixed-world terrain appear to heave.
       const waveBlend = Math.max(0, 1 - animState.terrainReveal);
 
@@ -1048,7 +1574,7 @@ function updateScene() {
       }
 
       // Shortest-path alignment toward cinematic target yaw
-      // Uses GSAP-driven value directly — no per-frame lerp to avoid drift
+      // Uses GSAP-driven value directly â€” no per-frame lerp to avoid drift
       const align = animState.boatAlignToTarget;
 
       if (align > 0.001) {
@@ -1062,7 +1588,7 @@ function updateScene() {
         if (delta > Math.PI) delta -= Math.PI * 2;
         if (delta < -Math.PI) delta += Math.PI * 2;
 
-        // Steer toward target — blend strength follows GSAP alignment factor
+        // Steer toward target â€” blend strength follows GSAP alignment factor
         animState.boatRotY += delta * align * 0.06;
       }
 
@@ -1071,7 +1597,7 @@ function updateScene() {
       boatGroup.rotation.z += (roll - boatGroup.rotation.z) * 0.06;
     }
 
-    // Bass model is independent in the scene — stays fixed, doesn't bob
+    // Bass model is independent in the scene â€” stays fixed, doesn't bob
     // (position set once during load, no per-frame updates needed)
 
     // Sync terrain anchor yaw to boat yaw only
@@ -1079,54 +1605,10 @@ function updateScene() {
       terrainAnchor.rotation.y = boatGroup.rotation.y;
     }
 
-    // Camera (skip when camera editor has live control)
-    if (!window.cameraEditorActive) {
-      const lockCam = animState.cameraLockedToBoat;
-
-      // Persistent lookAt vector (avoids allocating every frame)
-      if (!updateScene._smoothLookAt) {
-        updateScene._smoothLookAt = new THREE.Vector3(animState.lookAtX, animState.lookAtY, animState.lookAtZ);
-      }
-
-      if (lockCam > 0.001 && boatGroup) {
-        // Compute world-space targets from boat-local offsets
-        boatGroup.updateMatrixWorld();
-        const worldCamPos = CAM_LOCAL_POS.clone().applyMatrix4(boatGroup.matrixWorld);
-        const worldLookAt = CAM_LOCAL_LOOKAT.clone().applyMatrix4(boatGroup.matrixWorld);
-
-        // Blend between free camera (animState values) and boat-locked camera
-        const freeX = animState.cameraX, freeY = animState.cameraY, freeZ = animState.cameraZ;
-        const targetX = freeX * (1 - lockCam) + worldCamPos.x * lockCam;
-        const targetY = freeY * (1 - lockCam) + worldCamPos.y * lockCam;
-        const targetZ = freeZ * (1 - lockCam) + worldCamPos.z * lockCam;
-
-        // Minimal smoothing for boat-locked mode (dampens wave bob jitter only)
-        const camLerp = 0.5;
-        camera.position.x += (targetX - camera.position.x) * camLerp;
-        camera.position.y += (targetY - camera.position.y) * camLerp;
-        camera.position.z += (targetZ - camera.position.z) * camLerp;
-
-        // LookAt blend for boat-locked mode
-        const freeLX = animState.lookAtX, freeLY = animState.lookAtY, freeLZ = animState.lookAtZ;
-        const rawLookX = freeLX * (1 - lockCam) + worldLookAt.x * lockCam;
-        const rawLookY = freeLY * (1 - lockCam) + worldLookAt.y * lockCam + 3.5 * animState.glassesTiltUp;
-        const rawLookZ = freeLZ * (1 - lockCam) + worldLookAt.z * lockCam;
-
-        updateScene._smoothLookAt.x += (rawLookX - updateScene._smoothLookAt.x) * 0.5;
-        updateScene._smoothLookAt.y += (rawLookY - updateScene._smoothLookAt.y) * 0.5;
-        updateScene._smoothLookAt.z += (rawLookZ - updateScene._smoothLookAt.z) * 0.5;
-        camera.lookAt(updateScene._smoothLookAt);
-      } else {
-        // Free camera: set directly from animState — GSAP scrub already smooths these
-        camera.position.set(animState.cameraX, animState.cameraY, animState.cameraZ);
-
-        updateScene._smoothLookAt.set(animState.lookAtX, animState.lookAtY, animState.lookAtZ);
-        camera.lookAt(updateScene._smoothLookAt);
-      }
-    }
+    applyScrollCameraPath();
   }
 
-  // Screen opacity (skip in editor — screens always full visible)
+  // Screen opacity (skip in editor â€” screens always full visible)
   if (!editorMode) {
     screenMeshes.forEach(m => {
       m.material.opacity = animState.screenOpacity * (m.material.wireframe ? 0.25 : 0.7);
@@ -1139,8 +1621,8 @@ function updateScene() {
   }
 
   // ---- Wind-driven lake water ripples (freeze when camera editor active) ----
-  if (waterGeo && waterPlane && !window.cameraEditorActive) {
-    // Update visibility first — skip expensive vertex work when water is hidden
+  if (waterGeo && waterPlane && !isCameraToolActive()) {
+    // Update visibility first â€” skip expensive vertex work when water is hidden
     if (!window.waterEditorActive) {
       waterPlane.material.opacity = animState.waterOpacity * 0.95;
     }
@@ -1158,7 +1640,7 @@ function updateScene() {
         // Shared wave height
         let h = getWaveHeight(x, z, t);
 
-        // Boat wake — water-only effect (concentric + V-wake)
+        // Boat wake â€” water-only effect (concentric + V-wake)
         const dist = Math.sqrt(x * x + z * z);
         h += Math.sin(dist * 2.5 - t * 2.8) * 0.035 * Math.exp(-dist * 0.18);
         if (x < 0) {
@@ -1173,7 +1655,7 @@ function updateScene() {
     }
   }
 
-  // Terrain wiremesh topology — revealed after screens disappear and water fades
+  // Terrain wiremesh topology â€” revealed after screens disappear and water fades
   // Hide entirely until terrainReveal kicks in to prevent z-fighting with water
   if (terrainAnchor) {
     const tr = animState.terrainReveal;
@@ -1187,10 +1669,10 @@ function updateScene() {
     if (terrainEdges) {
       terrainEdges.material.opacity = pulse * 1.6 * tr;
     }
-    // Contour points disabled — they appear as distracting random blue dots
+    // Contour points disabled â€” they appear as distracting random blue dots
   }
 
-  // Low Poly Bass wireframe — revealed during fish phase (Phase 3)
+  // Low Poly Bass wireframe â€” revealed during fish phase (Phase 3)
   const fv = animState.fishVisibility;
   if (bassModels.length > 0) {
     const bassPulse = Math.sin(t * 2.0) * 0.05 + 0.85;
@@ -1204,7 +1686,7 @@ function updateScene() {
     });
   }
 
-  // Tree wireframe — revealed during Phase 4
+  // Tree wireframe â€” revealed during Phase 4
   const tv = animState.treeVisibility;
   if (treeModelGroup) {
     treeModelGroup.visible = tv > 0.01;
@@ -1276,20 +1758,23 @@ function updateScene() {
   }
 
   // Animate FOV (skip when camera editor is actively controlling it)
-  if (!window.cameraEditorActive && camera.fov !== animState.fov) {
+  if (!isCameraToolActive() && camera.fov !== animState.fov) {
     camera.fov = animState.fov;
     camera.updateProjectionMatrix();
   }
 
   // Canvas opacity (force full opacity when camera editor is active)
-  renderer.domElement.style.opacity = window.cameraEditorActive ? 1 : animState.canvasOpacity;
+  renderer.domElement.style.opacity = isCameraToolActive() ? 1 : animState.canvasOpacity;
 }
 
 // ===== RENDER LOOP =====
 function animate() {
   requestAnimationFrame(animate);
   if (orbitControls && editorMode) orbitControls.update();
+  updateFlicker();
+  updateGlassesRise();
   updateScene();
+  updateTextVisibility();
   renderer.render(scene, camera);
   // Overlay the masked dot grid on top
   renderDotGridOverlay();
@@ -1297,6 +1782,7 @@ function animate() {
 
 // ===== RESIZE =====
 function onResize() {
+  invalidateCameraPathCache();
   camera.fov = window.innerWidth < 768 ? 75 : 45;
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -1321,7 +1807,7 @@ function onResize() {
 //  1. Mask pass: render all scene objects as white silhouettes on black
 //  2. Dot pass: a full-screen shader quad draws dots procedurally,
 //     sampling the mask texture to skip dots where objects are visible.
-// No CPU pixel readback — everything runs on the GPU for maximum performance.
+// No CPU pixel readback â€” everything runs on the GPU for maximum performance.
 
 let dotGridScene, dotGridQuad;
 let maskOverrideMat, maskOverrideLineMat, maskOverridePointMat, maskInvisibleMat;
@@ -1404,7 +1890,7 @@ function setupDotGridMask() {
     `
   });
 
-  // Create a full-screen quad — uses NDC coordinates directly
+  // Create a full-screen quad â€” uses NDC coordinates directly
   const quadGeo = new THREE.PlaneGeometry(2, 2);
   dotGridQuad = new THREE.Mesh(quadGeo, dotGridMaterial);
   dotGridQuad.frustumCulled = false;
@@ -1419,7 +1905,7 @@ function renderDotGridOverlay() {
   if (!maskRenderTarget || !dotGridScene) return;
 
   // Skip when canvas is faded out (content sections visible)
-  const canvasOp = window.cameraEditorActive ? 1 : animState.canvasOpacity;
+  const canvasOp = isCameraToolActive() ? 1 : animState.canvasOpacity;
   if (canvasOp < 0.01) return;
 
   // Update dot grid opacity
@@ -1527,6 +2013,7 @@ function initLenis() {
 
 // ===== BOOT =====
 window.addEventListener('DOMContentLoaded', () => {
+  loadSceneConfig(); // async — applies saved camera path + text config when ready
   init();
   initLenis();
 });

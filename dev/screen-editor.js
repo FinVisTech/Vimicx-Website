@@ -27,7 +27,7 @@
   const dupBtn    = document.getElementById('editor-dup-btn');
   const delBtn    = document.getElementById('editor-del-btn');
   const exportBtn = document.getElementById('editor-export-btn');
-  const logBtn    = document.getElementById('editor-log-btn');
+  const logBtn    = document.getElementById('screen-log-btn');
   const logOutput = document.getElementById('editor-log-output');
 
   // Sliders
@@ -450,7 +450,7 @@
     dupBtn.addEventListener('click', duplicateScreen);
     delBtn.addEventListener('click', deleteScreen);
     exportBtn.addEventListener('click', exportToClipboard);
-    logBtn.addEventListener('click', showLogConsole);
+    if (logBtn) logBtn.addEventListener('click', showLogConsole);
 
     // Slider input events
     Object.keys(sl).forEach(key => {
