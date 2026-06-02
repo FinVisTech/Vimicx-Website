@@ -9,6 +9,7 @@
     content="Vimicx creates live 3D models displayed in AR glasses, transforming hard-to-interpret data into spatial understanding you can see, touch, and act on.">
   <meta name="keywords" content="AR, augmented reality, 3D visualization, live data, AR glasses, spatial computing">
   <meta name="theme-color" content="#1E1E1E">
+  <link rel="icon" type="image/png" href="img/VimicxLogoTransparentPNG.png">
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
@@ -39,12 +40,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://cdnjs.cloudflare.com">
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap"
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap"
     rel="stylesheet">
 
   <!-- Preload critical 3D assets -->
   <link rel="preload" href="3d assets/bass_boat.stl" as="fetch" crossorigin>
   <link rel="preload" href="3d assets/bass_wireframe.obj" as="fetch" crossorigin>
+  <link rel="preload" href="img/screen-media/FFSVideo.mp4" as="video" type="video/mp4">
+  <link rel="preload" href="img/screen-media/360SonarDemo.png" as="image" type="image/png">
+  <link rel="preload" href="img/screen-media/SideScanDemoImage.png" as="image" type="image/png">
 
   <link rel="stylesheet" href="style.css">
 
@@ -62,14 +66,14 @@
 
   <!-- ===== Navigation ===== -->
   <nav id="main-nav">
-    <div class="nav-logo">
-      <img src="img/logo.png" alt="Vimicx Logo" class="nav-logo-icon">
+    <a href="#about" class="nav-logo">
+      <img src="img/VimicxLogoTransparentPNG.png" alt="Vimicx Logo" class="nav-logo-icon">
       VIMICX
-    </div>
+    </a>
     <ul class="nav-links">
       <li><a href="#about">About</a></li>
       <li><a href="#features">Features</a></li>
-      <li><a href="#how-it-works">How It Works</a></li>
+      <li><a href="#how-it-works">Product</a></li>
       <li><a href="#team">Team</a></li>
       <li><a href="#cta" class="btn-primary">Join Mailing List</a></li>
     </ul>
@@ -84,11 +88,13 @@
   <!-- ===== Hero Section ===== -->
   <section id="hero">
     <div class="hero-content">
-      <h1 class="gradient-text hero-title">See Through<br>Water</h1>
+      <h1 class="hero-title">See Through<br><span class="water-gradient">Water</span></h1>
     </div>
     <div class="scroll-indicator">
       <span>Scroll</span>
-      <div class="arrow"></div>
+      <svg class="arrow" width="30" height="18" viewBox="0 0 30 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 3L15 15L27 3" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
     </div>
   </section>
 
@@ -96,10 +102,10 @@
   <section id="transformation">
     <div class="transform-overlay">
       <div class="transform-text" id="t-text-1">
-        <h2 class="gradient-text"><span class="nowrap-desktop">Sonar is confusing</span></h2>
+        <h2><span class="nowrap-desktop">Too many screens,</span><br><span class="nowrap-desktop">Not enough clarity.</span></h2>
       </div>
       <div class="transform-text" id="t-text-2">
-        <h2 class="gradient-text"><span class="nowrap-desktop">Vimicx is Superhuman</h2>
+        <h2><span class="nowrap-desktop">Not Anymore</span></h2>
       </div>
       <div class="transform-text" id="t-text-3">
         <h2 class="gradient-text">See the difference</h2>
@@ -136,43 +142,44 @@
         </div>
       </div>
       <div class="about-text">
-        <span class="label reveal">Who We Are</span>
+        <span class="label reveal">About Vimicx</span>
         <h2 class="reveal">The Future of<br><span class="gradient-text">Spatial Data</span></h2>
-        <p class="reveal">Vimicx is pioneering the next generation of data visualization. Vimicx streams live 3D models
-          directly
-          to AR glasses, replacing walls of screens with a single easly understandable immersive view.</p>
+        <p class="reveal">Vimicx is pioneering the next dimension of sonar data visualization. Vimicx streams live 3D models directly to AR glasses, replacing walls of screens with a single easily understandable immersive view.</p>
       </div>
     </section>
 
     <!-- ===== Features ===== -->
     <section id="features">
       <div class="section-header">
-        <span class="label reveal">Capabilities</span>
+        <span class="label reveal">Features</span>
         <h2 class="reveal">Why <span class="gradient-text">Vimicx</span></h2>
-        <p class="reveal">Vimicx is Superhuman Vision</p>
       </div>
       <div class="features-grid">
         <div class="feature-card reveal" id="feature-live-3d">
           <div class="feature-icon">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"
+            <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.5"
               stroke-linecap="round" stroke-linejoin="round" style="color: var(--cyan);">
-              <!-- Sharp diamond eye contour -->
-              <polygon points="2,12 12,5 22,12 12,19" />
-              <!-- Inner diamond iris -->
-              <polygon points="12,8 16,12 12,16 8,12" />
-              <!-- Center pupil diamond -->
-              <polygon points="12,10.5 13.5,12 12,13.5 10.5,12" fill="currentColor" />
-              <!-- Clean crosshairs -->
-              <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+              <!-- Outer Radar Circle -->
+              <circle cx="12" cy="12" r="10" stroke-opacity="0.3" />
+              <!-- Inner Range Rings -->
+              <circle cx="12" cy="12" r="6.5" stroke-opacity="0.15" />
+              <circle cx="12" cy="12" r="3" stroke-opacity="0.1" />
+              <!-- Compass Axis Ticks -->
+              <path d="M12 2v1.5M12 20.5v1.5M2 12h1.5M20.5 12h1.5" stroke-opacity="0.3" />
+              <!-- 360° Rotating Radar Sweep (Pie Slice) -->
+              <path d="M12 12 L19 5 A10 10 0 0 0 12 2 Z" fill="rgba(12, 154, 161, 0.18)" stroke-width="1.8" />
+              <!-- Tracked Target Nodes (Fish & Structures) -->
+              <circle cx="16.5" cy="8.5" r="1.2" fill="currentColor" />
+              <circle cx="8" cy="15" r="0.8" fill="currentColor" opacity="0.6" />
+              <circle cx="14" cy="14" r="1" fill="currentColor" opacity="0.8" />
             </svg>
           </div>
-          <h3>Live 3D Vision</h3>
-          <p>Real-time mesh generation from live sonar feeds. No pre-processing, no waiting. Experience underwater
-            environments as they actually exist.</p>
+          <h3>Unlimited Control</h3>
+          <p>Vimicx lets you see through water wherever and whenever you look. No more staring at screens. Look, and you will see.</p>
         </div>
         <div class="feature-card reveal" id="feature-ar">
           <div class="feature-icon">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"
+            <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.8"
               stroke-linecap="round" stroke-linejoin="round" style="color: var(--cyan);">
               <!-- Sleek temples/arms extending back in perspective -->
               <path d="M2.5 8c-1.5 0-2-1-2-2.5V4.5c0-1.5.5-2 2-2" />
@@ -183,13 +190,12 @@
               <path d="M2 6.5h20" />
             </svg>
           </div>
-          <h3>AR Display Adaptable</h3>
-          <p>Designed to operate hands-free with lightweight, comfortable AR glasses for active anglers, and fully
-            compatible with any AR-enabled mobile device.</p>
+          <h3>Superhuman Vision</h3>
+          <p>Vimicx gives you the superhuman ability to see through water. Think X-ray vision but for water. Instantly track targets, bottom structure, and more.</p>
         </div>
         <div class="feature-card reveal" id="feature-clarity">
           <div class="feature-icon">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"
+            <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.8"
               stroke-linecap="round" stroke-linejoin="round" style="color: var(--cyan);">
               <!-- 3D Isometric Wireframe Cube representing the World / Spatial structure -->
               <polygon points="12,2 20,6 20,16 12,20 4,16 4,6" />
@@ -208,9 +214,8 @@
               <circle cx="12" cy="20" r="1" fill="currentColor" />
             </svg>
           </div>
-          <h3>AI World Model</h3>
-          <p>Our fine-tuned AI world model solves occlusion and enables autonomous target tracking, turning complex 3D
-            sensor data into an intuitive view.</p>
+          <h3>Custom AI Models</h3>
+          <p>Our fine-tuned AI models enable autonomous, real-time target tracking. We custom train models for particular bodies of water.</p>
         </div>
       </div>
     </section>
@@ -218,56 +223,120 @@
     <!-- ===== How It Works ===== -->
     <section id="how-it-works">
       <div class="section-header">
-        <span class="label reveal">Process</span>
+        <span class="label reveal">Product</span>
         <h2 class="reveal">How It <span class="gradient-text">Works</span></h2>
-        <p class="reveal">Three steps from raw data to spatial understanding.</p>
       </div>
       <div class="steps">
         <div class="step reveal">
           <div class="step-number">01</div>
           <div class="step-content">
-            <h3>Ingest & Fuse</h3>
-            <p>Connect any data source — sonar, LiDAR, IoT sensors, telemetry feeds. Our fusion engine merges them into
-              a unified spatial model in milliseconds.</p>
+            <h3>Mount the Vimicx Turret</h3>
+            <p>Connect your forward-facing sonar to our smart turret, then mount it onto your trolling motor. It's a quick, two-bolt, plug-and-play setup built for active fishing.</p>
           </div>
         </div>
         <div class="step reveal">
           <div class="step-number">02</div>
           <div class="step-content">
-            <h3>Model & Render</h3>
-            <p>Our 3D engine constructs a live mesh — complete with topology, highlighted objects, and data layers —
-              optimized for real-time AR display.</p>
+            <h3>Link Your AR Glasses</h3>
+            <p>Wirelessly connect our augmented reality glasses in seconds. The onboard Vimicx processor instantly converts your raw sonar feeds into real-time 3D spatial data.</p>
           </div>
         </div>
         <div class="step reveal">
           <div class="step-number">03</div>
           <div class="step-content">
-            <h3>Display & Act</h3>
-            <p>Stream the live 3D model directly to AR glasses. See targets, structures, and anomalies overlaid on your
-              real-world environment. Act with confidence.</p>
+            <h3>Catch More Fish</h3>
+            <p>See fish exactly where they actually are in the water, not on a flat screen. Seeing data clearly in full 3D makes locating and landing targets easier than ever.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ===== Stats ===== -->
+    <!-- ===== Stats (Seamless Ticker Carousel) ===== -->
     <section id="stats">
-      <div class="stats-grid">
-        <div class="stat-item reveal">
-          <div class="stat-value gradient-text" data-target="5">&lt; 5ms</div>
-          <div class="stat-label">Rendering Latency</div>
-        </div>
-        <div class="stat-item reveal">
-          <div class="stat-value gradient-text">120 FPS</div>
-          <div class="stat-label">Smooth AR Display</div>
-        </div>
-        <div class="stat-item reveal">
-          <div class="stat-value gradient-text">360°</div>
-          <div class="stat-label">Spatial Coverage</div>
-        </div>
-        <div class="stat-item reveal">
-          <div class="stat-value gradient-text">∞</div>
-          <div class="stat-label">Data Layers</div>
+      <div class="ticker-wrap">
+        <div class="ticker">
+          <!-- Item 1 -->
+          <div class="stat-item">
+            <div class="stat-value gradient-text">&lt; 5ms</div>
+            <div class="stat-label">Rendering Latency</div>
+          </div>
+          <!-- Item 2 -->
+          <div class="stat-item">
+            <div class="stat-value gradient-text">120 FPS</div>
+            <div class="stat-label">Smooth AR Display</div>
+          </div>
+          <!-- Item 3 -->
+          <div class="stat-item">
+            <div class="stat-value gradient-text">360°</div>
+            <div class="stat-label">Spatial Coverage</div>
+          </div>
+          <!-- Item 4 -->
+          <div class="stat-item">
+            <div class="stat-value gradient-text">∞</div>
+            <div class="stat-label">Data Layers</div>
+          </div>
+          <!-- Item 5 -->
+          <div class="stat-item">
+            <div class="stat-value gradient-text">4K HD</div>
+            <div class="stat-label">AR Visor Resolution</div>
+          </div>
+          <!-- Item 6 -->
+          <div class="stat-item">
+            <div class="stat-value gradient-text">Real-Time</div>
+            <div class="stat-label">AI Target Tracking</div>
+          </div>
+          <!-- Item 7 -->
+          <div class="stat-item">
+            <div class="stat-value gradient-text">Zero Lag</div>
+            <div class="stat-label">Wireless Connection</div>
+          </div>
+          <!-- Item 8 -->
+          <div class="stat-item">
+            <div class="stat-value gradient-text">3D Mesh</div>
+            <div class="stat-label">Bottom Topology</div>
+          </div>
+
+          <!-- DUPLICATED ITEMS for seamless infinite looping scroll -->
+          <!-- Item 1 -->
+          <div class="stat-item">
+            <div class="stat-value gradient-text">&lt; 5ms</div>
+            <div class="stat-label">Rendering Latency</div>
+          </div>
+          <!-- Item 2 -->
+          <div class="stat-item">
+            <div class="stat-value gradient-text">120 FPS</div>
+            <div class="stat-label">Smooth AR Display</div>
+          </div>
+          <!-- Item 3 -->
+          <div class="stat-item">
+            <div class="stat-value gradient-text">360°</div>
+            <div class="stat-label">Spatial Coverage</div>
+          </div>
+          <!-- Item 4 -->
+          <div class="stat-item">
+            <div class="stat-value gradient-text">∞</div>
+            <div class="stat-label">Data Layers</div>
+          </div>
+          <!-- Item 5 -->
+          <div class="stat-item">
+            <div class="stat-value gradient-text">4K HD</div>
+            <div class="stat-label">AR Visor Resolution</div>
+          </div>
+          <!-- Item 6 -->
+          <div class="stat-item">
+            <div class="stat-value gradient-text">Real-Time</div>
+            <div class="stat-label">AI Target Tracking</div>
+          </div>
+          <!-- Item 7 -->
+          <div class="stat-item">
+            <div class="stat-value gradient-text">Zero Lag</div>
+            <div class="stat-label">Wireless Connection</div>
+          </div>
+          <!-- Item 8 -->
+          <div class="stat-item">
+            <div class="stat-value gradient-text">3D Mesh</div>
+            <div class="stat-label">Bottom Topology</div>
+          </div>
         </div>
       </div>
     </section>
@@ -277,7 +346,6 @@
       <div class="section-header">
         <span class="label reveal">Applications</span>
         <h2 class="reveal">Built for <span class="gradient-text">Every Domain</span></h2>
-        <p class="reveal">Vimicx scales across verticals.</p>
       </div>
       <div class="use-cases-grid">
         <div class="use-case-card reveal" id="uc-marine">
@@ -394,10 +462,10 @@
     <footer id="main-footer">
       <div class="footer-top">
         <div class="footer-brand">
-          <div class="nav-logo">
-            <img src="img/logo.png" alt="Vimicx Logo" class="nav-logo-icon">
+          <a href="#about" class="nav-logo">
+            <img src="img/VimicxLogoTransparentPNG.png" alt="Vimicx Logo" class="nav-logo-icon">
             VIMICX
-          </div>
+          </a>
           <p>Transforming complex data into spatial understanding through live 3D models and augmented reality.</p>
         </div>
         <div class="footer-links">
@@ -507,6 +575,16 @@
         <label>Color</label>
         <input type="color" id="es-color" value="#0C9AA1">
       </div>
+      <hr class="editor-sep">
+      <div class="editor-group">
+        <label>Screen Media</label>
+        <label class="es-upload-btn" for="es-media-upload">📁 Upload Image / Video</label>
+        <input type="file" id="es-media-upload" accept="image/*,video/mp4,video/webm,video/quicktime" style="display:none">
+        <div class="es-media-info" id="es-media-info" style="display:none">
+          <span id="es-media-name"></span>
+          <button id="es-media-clear" title="Remove media">✕</button>
+        </div>
+      </div>
     </div>
 
     <div class="editor-export-row">
@@ -566,15 +644,97 @@
         <label>FOV <span class="editor-val" id="cv-fov">45°</span></label>
         <input type="range" id="cam-fov" min="10" max="120" step="1" value="45">
       </div>
+      <hr class="editor-sep">
+      <div class="editor-group-label">Camera Path</div>
+      <div class="editor-group">
+        <button id="camera-path-open-scroll-btn" type="button" class="editor-wide-action">Open Scroll Control</button>
+      </div>
+      <div class="editor-group">
+        <label>Selected <span class="editor-val" id="cp-count">0</span></label>
+        <div class="editor-readout" id="cp-selected-label">No keyframe selected</div>
+      </div>
+      <div class="editor-group">
+        <label>Space <span class="editor-val" id="cp-space">world</span></label>
+        <select id="cam-path-space">
+          <option value="world">world</option>
+          <option value="boat">boat-relative</option>
+        </select>
+      </div>
+      <div class="editor-group">
+        <label>Segment Mode <span class="editor-val" id="cp-mode">linear</span></label>
+        <select id="cam-path-mode">
+          <option value="linear">linear</option>
+          <option value="orbit">orbit</option>
+          <option value="spline">spline</option>
+        </select>
+      </div>
+      <div class="editor-group">
+        <label>Boat Lock <span class="editor-val" id="cp-boat-lock">0.00</span></label>
+        <input type="range" id="cam-path-boat-lock" min="0" max="1" step="0.01" value="0">
+      </div>
+      <div class="editor-group">
+        <label>Glasses <span class="editor-val" id="cp-glasses-progress">0.00</span></label>
+        <input type="range" id="cam-path-glasses-progress" min="0" max="1" step="0.01" value="0">
+      </div>
+      <div class="editor-group">
+        <label>Tilt <span class="editor-val" id="cp-glasses-tilt">0.00</span></label>
+        <input type="range" id="cam-path-glasses-tilt" min="0" max="1" step="0.01" value="0">
+      </div>
+      <div class="camera-path-actions">
+        <button id="camera-path-capture-btn" type="button">Capture</button>
+        <button id="camera-path-jump-btn" type="button">Jump</button>
+        <button id="camera-path-preview-segment-btn" type="button">Preview Segment</button>
+        <button id="camera-path-preview-full-btn" type="button">Preview Full</button>
+        <button id="camera-path-reset-btn" type="button">Reset Default</button>
+      </div>
     </div>
 
     <div class="editor-export-row">
       <button id="camera-copy-btn">📋 Copy Coordinates</button>
     </div>
     <div class="editor-export-row">
+      <button id="camera-path-copy-btn">Copy Camera Path</button>
+    </div>
+    <div class="editor-export-row">
       <button id="camera-log-btn">📄 Show in Console</button>
     </div>
     <pre id="camera-log-output" style="display:none;"></pre>
+  </div>
+
+  <div id="camera-scroll-control" class="camera-scroll-control" style="display:none;">
+    <div class="camera-scroll-topbar">
+      <div>
+        <div class="camera-scroll-title">Scroll Control</div>
+        <div class="camera-scroll-subtitle" id="camera-scroll-status">Select a keyframe or segment to edit the camera path.</div>
+      </div>
+      <div class="camera-scroll-actions">
+        <button id="camera-text-add-btn" type="button">+ Text</button>
+        <button id="camera-scroll-preview-full-btn" type="button">Preview Full</button>
+        <button id="camera-scroll-copy-btn" type="button">Copy Path</button>
+        <button id="camera-scroll-close-btn" type="button">Close</button>
+      </div>
+    </div>
+    <div class="camera-scroll-confirm" id="camera-scroll-confirm" style="display:none;">
+      <span id="camera-scroll-confirm-text">Move keyframe?</span>
+      <button id="camera-scroll-accept-btn" type="button">Accept Move</button>
+      <button id="camera-scroll-cancel-btn" type="button">Cancel Move</button>
+    </div>
+    <div class="camera-timeline-wrap">
+      <div class="camera-timeline-scale">
+        <span>0.000</span>
+        <span>0.250</span>
+        <span>0.500</span>
+        <span>0.750</span>
+        <span>1.000</span>
+      </div>
+      <div id="camera-scroll-track" class="camera-scroll-track">
+        <div class="camera-scroll-rail"></div>
+        <div id="camera-scroll-segments" class="camera-scroll-segments"></div>
+        <div id="camera-scroll-keyframes" class="camera-scroll-keyframes"></div>
+        <div id="camera-scroll-playhead" class="camera-scroll-playhead" style="display:none;"></div>
+        <div id="camera-text-bars" class="camera-text-bars"></div>
+      </div>
+    </div>
   </div>
 
   <!-- ===== Scene Editor Panel ===== -->
@@ -913,6 +1073,10 @@
 
   <!-- ===== UNIFIED DEV MENU ===== -->
   <div id="dev-menu-container" style="display:none;">
+    <div id="dev-save-bar" style="display:none;">
+      <button id="dev-save-btn" class="dev-save-btn">💾 Save Changes</button>
+      <button id="dev-cancel-btn" class="dev-cancel-btn">✕ Cancel</button>
+    </div>
     <button id="dev-menu-main-btn" title="Open Dev Tools">🛠️ Dev Tools</button>
     <div id="dev-menu-dropdown" style="display:none;">
       <button id="camera-toggle-btn" class="dev-dropdown-btn">📷 Camera</button>
@@ -976,6 +1140,10 @@
       }
 
       // Dynamically load dev scripts
+      const saveManagerScript = document.createElement('script');
+      saveManagerScript.src = 'dev/save-manager.js';
+      document.body.appendChild(saveManagerScript);
+
       const screenEditorScript = document.createElement('script');
       screenEditorScript.src = 'dev/screen-editor.js';
       document.body.appendChild(screenEditorScript);
@@ -983,6 +1151,10 @@
       const cameraEditorScript = document.createElement('script');
       cameraEditorScript.src = 'dev/camera-editor.js';
       document.body.appendChild(cameraEditorScript);
+
+      const textEditorScript = document.createElement('script');
+      textEditorScript.src = 'dev/text-editor.js';
+      document.body.appendChild(textEditorScript);
 
       const bassEditorScript = document.createElement('script');
       bassEditorScript.src = 'dev/bass-editor.js';
