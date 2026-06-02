@@ -1441,20 +1441,6 @@ function setupScrollAnimations() {
   tl.to(animState, { treeVisibility: 0, duration: 0.08, ease: 'power2.in' }, 0.92);
   tl.to(animState, { fishVisibility: 0, duration: 0.08, ease: 'power2.in' }, 0.92);
   tl.to(animState, { terrainReveal: 0, duration: 0.08, ease: 'power2.in' }, 0.92);
-  // Canvas fades to transparent last (92-100%) â€” no black, scene dissolves away
-  tl.to(animState, { canvasOpacity: 0, duration: 0.08, ease: 'power1.in' }, 0.92);
-
-  // ===== CONTENT SECTION CANVAS FADE =====
-  ScrollTrigger.create({
-    trigger: '.content-section',
-    start: 'top 90%',
-    onEnter: () => {
-      gsap.to('#three-canvas', { opacity: 0, duration: 0.5 });
-    },
-    onLeaveBack: () => {
-      gsap.to('#three-canvas', { opacity: 1, duration: 0.5 });
-    }
-  });
 }
 
 // ===== REVEAL ANIMATIONS =====
@@ -1751,8 +1737,6 @@ function updateScene() {
     camera.updateProjectionMatrix();
   }
 
-  // Canvas opacity (force full opacity when camera editor is active)
-  renderer.domElement.style.opacity = isCameraToolActive() ? 1 : animState.canvasOpacity;
 }
 
 // ===== RENDER LOOP =====
@@ -1892,12 +1876,8 @@ function setupDotGridMask() {
 function renderDotGridOverlay() {
   if (!maskRenderTarget || !dotGridScene) return;
 
-  // Skip when canvas is faded out (content sections visible)
-  const canvasOp = isCameraToolActive() ? 1 : animState.canvasOpacity;
-  if (canvasOp < 0.01) return;
-
   // Update dot grid opacity
-  dotGridQuad.material.uniforms.uOpacity.value = canvasOp;
+  dotGridQuad.material.uniforms.uOpacity.value = 1;
 
   // --- MASK PASS: render all scene objects as white silhouettes ---
   const origFog = scene.fog;
