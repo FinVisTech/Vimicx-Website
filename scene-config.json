@@ -116,27 +116,6 @@
       "glassesTilt": 0
     },
     {
-      "id": "glasses-pov",
-      "label": "Glasses POV",
-      "progress": 0.591,
-      "space": "boat",
-      "mode": "linear",
-      "position": {
-        "x": 1.7,
-        "y": 2.1,
-        "z": 0
-      },
-      "target": {
-        "x": 8.77,
-        "y": -4.97,
-        "z": 0
-      },
-      "fov": 70,
-      "boatLock": 1,
-      "glassesProgress": 1,
-      "glassesTilt": 0
-    },
-    {
       "id": "final-tilt",
       "label": "Final Tilt",
       "progress": 0.930582337061319,

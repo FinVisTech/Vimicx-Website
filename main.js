@@ -972,18 +972,6 @@ function buildDefaultCameraPath() {
       boatLock: 1
     },
     {
-      id: 'glasses-pov',
-      label: 'Glasses POV',
-      progress: tp(0.63),
-      space: 'boat',
-      mode: 'linear',
-      position: vecData(CAM_LOCAL_POS.x, CAM_LOCAL_POS.y, CAM_LOCAL_POS.z),
-      target: vecData(CAM_LOCAL_LOOKAT.x, CAM_LOCAL_LOOKAT.y, CAM_LOCAL_LOOKAT.z),
-      fov: cockpitFov,
-      boatLock: 1,
-      glassesProgress: 1
-    },
-    {
       id: 'final-tilt',
       label: 'Final Tilt',
       progress: tp(0.92),
