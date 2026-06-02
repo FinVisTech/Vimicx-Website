@@ -231,7 +231,7 @@
         -1.571
       ],
       "color": "#ffffff",
-      "mediaPersistPath": "media/FFSVideo.mp4"
+      "mediaPersistPath": "img/screen-media/FFSVideo.mp4"
     },
     {
       "w": 0.35,
@@ -247,39 +247,23 @@
         -0.653
       ],
       "color": "#ffffff",
-      "mediaPersistPath": null
+      "mediaPersistPath": "img/screen-media/360SonarDemo.png"
     },
     {
       "w": 0.3,
       "h": 0.22,
       "pos": [
-        -0.09,
-        0.53,
-        0.56
+        -0.08,
+        0.56,
+        0.36
       ],
       "rot": [
-        -0.454,
-        1.553,
-        0.489
-      ],
-      "color": "#8b5cf6",
-      "mediaPersistPath": null
-    },
-    {
-      "w": 0.3,
-      "h": 0.22,
-      "pos": [
-        -0.09,
-        0.37,
-        -0.5
-      ],
-      "rot": [
-        0.035,
         1.571,
-        0
+        1.274,
+        -1.571
       ],
-      "color": "#00ff88",
-      "mediaPersistPath": null
+      "color": "#ffffff",
+      "mediaPersistPath": "img/screen-media/SideScanDemoImage.png"
     }
   ]
 }

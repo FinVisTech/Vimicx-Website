@@ -219,10 +219,10 @@
       img.src = url;
     }
 
-    // Set path immediately (same sanitisation as the server) so Save works
-    // even if clicked before the upload resolves.
+    // Use a local preview immediately. The persistent path is set only after
+    // the dev server confirms the committed static asset path.
     const safeName = file.name.replace(/[^A-Za-z0-9._-]/g, '_');
-    mesh.userData.mediaPersistPath = `media/${safeName}`;
+    mesh.userData.mediaPersistPath = null;
     mesh.userData.mediaName        = safeName;
 
     // Upload to dev server so the file survives page reloads
@@ -231,8 +231,17 @@
       headers: { 'Content-Type': file.type },
       body: file,
     }).then(r => r.json()).then(data => {
-      if (data.ok) mesh.userData.mediaPersistPath = data.path; // confirm server path
-    }).catch(() => {}); // silently no-op if dev server isn't running
+      if (data.ok) {
+        mesh.userData.mediaPersistPath = data.path; // confirm server path
+        if (window.vimicxSaveManager) window.vimicxSaveManager.notifyChange();
+      } else {
+        throw new Error(data.error || 'upload failed');
+      }
+    }).catch((err) => {
+      console.error('[Screen Editor] media upload failed:', err);
+      mediaNameEl.textContent = `${safeName} (upload failed - start dev server)`;
+      mediaInfo.style.display = 'flex';
+    });
 
     updateMediaUI();
   }

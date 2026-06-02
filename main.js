@@ -317,6 +317,32 @@ function buildScreens() {
 }
 
 // ===== SCREEN LAYOUT CONFIG API =====
+const screenMediaPreloadCache = new Map();
+
+function preloadScreenMedia(layout) {
+  if (!Array.isArray(layout)) return;
+  layout.forEach(def => {
+    const path = def && def.mediaPersistPath;
+    if (!path || screenMediaPreloadCache.has(path)) return;
+
+    if (/\.(mp4|webm|mov|m4v)$/i.test(path)) {
+      const video = document.createElement('video');
+      video.src = path;
+      video.preload = 'auto';
+      video.muted = true;
+      video.loop = true;
+      video.playsInline = true;
+      video.load();
+      screenMediaPreloadCache.set(path, video);
+    } else {
+      const img = new Image();
+      img.decoding = 'async';
+      img.src = path;
+      screenMediaPreloadCache.set(path, img);
+    }
+  });
+}
+
 function loadMediaOntoMesh(mesh, path) {
   const isVideo = /\.(mp4|webm|mov|m4v)$/i.test(path);
   // Set immediately so get() always sees the path, even before async texture loads
@@ -334,11 +360,13 @@ function loadMediaOntoMesh(mesh, path) {
     mesh.material.needsUpdate   = true;
   }
   if (isVideo) {
-    const video = document.createElement('video');
-    video.src         = path;
+    const video = screenMediaPreloadCache.get(path) || document.createElement('video');
+    if (!video.src) video.src = path;
+    video.preload     = 'auto';
     video.loop        = true;
     video.muted       = true;
     video.playsInline = true;
+    video.load();
     video.play();
     const texture = new THREE.VideoTexture(video);
     texture.minFilter = THREE.LinearFilter;
@@ -1558,6 +1586,7 @@ async function loadSceneConfig() {
     if (data.screenFlicker) flickerConfig = { start: clamp01(data.screenFlicker.start), end: clamp01(data.screenFlicker.end) };
     if (data.glassesRise)  glassesRiseConfig = { start: clamp01(data.glassesRise.start),  end: clamp01(data.glassesRise.end)  };
     if (data.screenLayout && Array.isArray(data.screenLayout) && data.screenLayout.length) {
+      preloadScreenMedia(data.screenLayout);
       if (boatLoaded) applyScreenLayout(data.screenLayout);
       else window._pendingScreenLayout = data.screenLayout;
     }
@@ -1797,8 +1826,11 @@ function updateScene() {
   // Screen opacity (skip in editor â€” screens always full visible)
   if (!editorMode) {
     screenMeshes.forEach(m => {
-      m.material.opacity = animState.screenOpacity * (m.material.wireframe ? 0.25 : (m.userData.baseOpacity !== undefined ? m.userData.baseOpacity : 0.7));
-      m.visible = animState.screenOpacity > 0.01;
+      const baseOpacity = m.material.wireframe ? 0.25 : (m.userData.baseOpacity !== undefined ? m.userData.baseOpacity : 0.7);
+      const hasMedia = !m.material.wireframe && (m.userData.mediaPersistPath || m.material.map);
+      const screenFade = hasMedia && animState.screenOpacity > 0.01 ? Math.max(animState.screenOpacity, 0.85) : animState.screenOpacity;
+      m.material.opacity = screenFade * baseOpacity;
+      m.visible = screenFade > 0.01;
     });
     screenEdges.forEach(e => {
       e.material.opacity = animState.screenOpacity * 0.9;

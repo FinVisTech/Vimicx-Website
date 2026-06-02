@@ -9,12 +9,13 @@ import json
 import os
 import re
 import socketserver
+import time
 from urllib.parse import urlparse, parse_qs
 
 PORT = 8080
 BIND = '127.0.0.1'
 CONFIG_FILE = 'scene-config.json'
-MEDIA_DIR   = 'media'
+MEDIA_DIR   = os.path.join('img', 'screen-media')
 
 
 class DevHandler(http.server.SimpleHTTPRequestHandler):
@@ -37,12 +38,14 @@ class DevHandler(http.server.SimpleHTTPRequestHandler):
                 name   = query.get('name', ['file'])[0]
                 # Strip path traversal and keep only safe characters
                 name   = re.sub(r'[^A-Za-z0-9._-]', '_', os.path.basename(name))
+                stem, ext = os.path.splitext(name)
+                name = f'{stem}-{int(time.time() * 1000)}{ext}'
                 length = int(self.headers.get('Content-Length', 0))
                 body   = self.rfile.read(length)
                 os.makedirs(MEDIA_DIR, exist_ok=True)
                 with open(os.path.join(MEDIA_DIR, name), 'wb') as f:
                     f.write(body)
-                self._respond(200, {'ok': True, 'path': f'{MEDIA_DIR}/{name}'})
+                self._respond(200, {'ok': True, 'path': f'img/screen-media/{name}'})
             except Exception as e:
                 self._respond(500, {'error': str(e)})
 
