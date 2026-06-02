@@ -1437,10 +1437,7 @@ function setupScrollAnimations() {
   // Phase 4: Tree reveal (same early timing as fish)
   tl.to(animState, { treeVisibility: 1, duration: 0.13 }, 0.20);
 
-  // Phase 5: Tree, fish, and terrain fade out together with the canvas dissolve at the very end (92-100%)
-  tl.to(animState, { treeVisibility: 0, duration: 0.08, ease: 'power2.in' }, 0.92);
-  tl.to(animState, { fishVisibility: 0, duration: 0.08, ease: 'power2.in' }, 0.92);
-  tl.to(animState, { terrainReveal: 0, duration: 0.08, ease: 'power2.in' }, 0.92);
+  // 3D elements stay visible — the 2D page scrolling over the canvas is the exit
 }
 
 // ===== REVEAL ANIMATIONS =====
