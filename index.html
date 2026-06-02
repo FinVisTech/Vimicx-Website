@@ -220,6 +220,7 @@
     <!-- ===== How It Works ===== -->
     <section id="how-it-works">
       <div class="section-header">
+        <span class="label reveal">Product</span>
         <h2 class="reveal">How It <span class="gradient-text">Works</span></h2>
       </div>
       <div class="steps">
@@ -570,6 +571,16 @@
       <div class="editor-group">
         <label>Color</label>
         <input type="color" id="es-color" value="#0C9AA1">
+      </div>
+      <hr class="editor-sep">
+      <div class="editor-group">
+        <label>Screen Media</label>
+        <label class="es-upload-btn" for="es-media-upload">📁 Upload Image / Video</label>
+        <input type="file" id="es-media-upload" accept="image/*,video/mp4,video/webm,video/quicktime" style="display:none">
+        <div class="es-media-info" id="es-media-info" style="display:none">
+          <span id="es-media-name"></span>
+          <button id="es-media-clear" title="Remove media">✕</button>
+        </div>
       </div>
     </div>
 

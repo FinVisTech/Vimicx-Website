@@ -213,6 +213,8 @@ function buildBoat() {
 
     // Now that the STL is loaded, build dependent elements
     buildScreens();
+    if (window._pendingScreenLayout) { applyScreenLayout(window._pendingScreenLayout); window._pendingScreenLayout = null; }
+    if (window.vimicxSaveManager) window.vimicxSaveManager.baselineScreenLayout();
     buildWireframeClones();
     buildWater(); // terrain topology below the hull
     boatLoaded = true;
@@ -235,6 +237,8 @@ function buildBoat() {
       boatGroup.add(fallback);
 
       buildScreens();
+      if (window._pendingScreenLayout) { applyScreenLayout(window._pendingScreenLayout); window._pendingScreenLayout = null; }
+      else if (window.vimicxSaveManager) window.vimicxSaveManager.baselineScreenLayout();
       buildWireframeClones();
       buildWater();
       boatLoaded = true;
@@ -311,6 +315,109 @@ function buildScreens() {
     screenMeshes.push(grid);
   });
 }
+
+// ===== SCREEN LAYOUT CONFIG API =====
+function loadMediaOntoMesh(mesh, path) {
+  const isVideo = /\.(mp4|webm|mov|m4v)$/i.test(path);
+  // Set immediately so get() always sees the path, even before async texture loads
+  mesh.userData.mediaPersistPath = path;
+  mesh.userData.mediaName        = path.split('/').pop();
+  function applyTex(texture) {
+    texture.repeat.set(-1, 1);
+    texture.offset.set(1, 0);
+    if (texture.minFilter !== undefined) texture.minFilter = THREE.LinearFilter;
+    mesh.material.map           = texture;
+    mesh.material.color.set(0xffffff);
+    mesh.material.opacity       = 1;
+    mesh.userData.baseOpacity   = 1;
+    mesh.userData.mediaTexture  = texture;
+    mesh.material.needsUpdate   = true;
+  }
+  if (isVideo) {
+    const video = document.createElement('video');
+    video.src         = path;
+    video.loop        = true;
+    video.muted       = true;
+    video.playsInline = true;
+    video.play();
+    const texture = new THREE.VideoTexture(video);
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    mesh.userData.videoEl = video;
+    applyTex(texture);
+  } else {
+    new THREE.TextureLoader().load(path, applyTex);
+  }
+}
+
+function applyScreenLayout(defs) {
+  if (!boatGroup || !defs || !defs.length) return;
+  [...screenMeshes].forEach(m => { boatGroup.remove(m); m.geometry.dispose(); m.material.dispose(); });
+  [...screenEdges].forEach(e => { boatGroup.remove(e); e.geometry.dispose(); e.material.dispose(); });
+  screenMeshes = [];
+  screenEdges = [];
+
+  defs.forEach(def => {
+    const colorInt = typeof def.color === 'string' ? parseInt(def.color.replace('#', ''), 16) : def.color;
+    const geo = new THREE.PlaneGeometry(def.w, def.h);
+    const mat = new THREE.MeshBasicMaterial({ color: colorInt, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(...def.pos);
+    mesh.rotation.set(...def.rot);
+    mesh.renderOrder = 10;
+    boatGroup.add(mesh);
+
+    const edgeGeo = new THREE.EdgesGeometry(geo);
+    const edgeMat = new THREE.LineBasicMaterial({ color: colorInt, transparent: true, opacity: 0.9, depthWrite: false });
+    const edges = new THREE.LineSegments(edgeGeo, edgeMat);
+    edges.position.copy(mesh.position);
+    edges.rotation.copy(mesh.rotation);
+    edges.renderOrder = 11;
+    boatGroup.add(edges);
+    screenEdges.push(edges);
+
+    const gridGeo = new THREE.PlaneGeometry(def.w * 0.85, def.h * 0.85, 4, 3);
+    const gridMat = new THREE.MeshBasicMaterial({ color: colorInt, wireframe: true, transparent: true, opacity: 0.25, depthWrite: false });
+    const grid = new THREE.Mesh(gridGeo, gridMat);
+    grid.position.copy(mesh.position);
+    const fwd = new THREE.Vector3(0, 0, 0.002);
+    fwd.applyEuler(mesh.rotation);
+    grid.position.add(fwd);
+    grid.rotation.copy(mesh.rotation);
+    grid.renderOrder = 10;
+    boatGroup.add(grid);
+    screenMeshes.push(mesh, grid);
+
+    if (def.mediaPersistPath) loadMediaOntoMesh(mesh, def.mediaPersistPath);
+  });
+}
+
+window.vimicxScreenLayout = {
+  get: () => {
+    const mains = screenMeshes.filter(m => !m.material.wireframe);
+    if (!mains.length) return null;
+    return mains.map(mesh => {
+      const q = new THREE.Quaternion().setFromEuler(mesh.rotation);
+      const e = new THREE.Euler().setFromQuaternion(q, 'XYZ');
+      return {
+        w: +mesh.geometry.parameters.width.toFixed(4),
+        h: +mesh.geometry.parameters.height.toFixed(4),
+        pos: [+mesh.position.x.toFixed(3), +mesh.position.y.toFixed(3), +mesh.position.z.toFixed(3)],
+        rot: [+e.x.toFixed(3), +e.y.toFixed(3), +e.z.toFixed(3)],
+        color: '#' + mesh.material.color.getHex().toString(16).padStart(6, '0'),
+        mediaPersistPath: mesh.userData.mediaPersistPath || null,
+      };
+    });
+  },
+  set: (defs) => {
+    if (boatLoaded) {
+      applyScreenLayout(defs);
+      if (window.vimicxScreenEditorRefresh) window.vimicxScreenEditorRefresh();
+    } else {
+      window._pendingScreenLayout = defs;
+    }
+  },
+};
 
 // ===== WIREFRAME CLONES (disabled â€” boat stays solid) =====
 function buildWireframeClones() {
@@ -794,14 +901,132 @@ function setupImageSlider() {
   const slider = document.getElementById('slider-range');
   const beforeContainer = document.getElementById('slider-before-container');
   const handle = document.getElementById('slider-handle');
+  const sliderEl = document.getElementById('about-slider');
 
-  if (!slider || !beforeContainer || !handle) return;
+  if (!slider || !beforeContainer || !handle || !sliderEl) return;
+
+  // Canvas overlay for tron energy effect — sits between images and the handle UI
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;z-index:3;pointer-events:none;';
+  sliderEl.insertBefore(canvas, handle);
+
+  // Spring-physics state (all in % units, velocity in %/s)
+  const SPRING = 35;  // stiffness — higher = snappier catch-up
+  const DAMP   = 8;   // damping  — higher = less oscillation
+  let targetPct = 50;
+  let trailPct  = 50;
+  let trailVel  = 0;
+  let lastTime  = performance.now();
 
   slider.addEventListener('input', (e) => {
-    const value = e.target.value;
-    beforeContainer.style.clipPath = `polygon(0 0, ${value}% 0, ${value}% 100%, 0 100%)`;
-    handle.style.left = `${value}%`;
+    targetPct = parseFloat(e.target.value);
+    beforeContainer.style.clipPath = `polygon(0 0, ${targetPct}% 0, ${targetPct}% 100%, 0 100%)`;
+    handle.style.left = `${targetPct}%`;
   });
+
+  function tick(now) {
+    const dt = Math.min((now - lastTime) / 1000, 0.05);
+    lastTime = now;
+
+    trailVel += (targetPct - trailPct) * SPRING * dt;
+    trailVel *= Math.exp(-DAMP * dt);
+    trailPct += trailVel * dt;
+    trailPct = Math.max(0, Math.min(100, trailPct));
+
+    const rect = sliderEl.getBoundingClientRect();
+    const W = Math.round(rect.width);
+    const H = Math.round(rect.height);
+    if (canvas.width !== W)  canvas.width  = W;
+    if (canvas.height !== H) canvas.height = H;
+
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, W, H);
+
+    const cx = (targetPct / 100) * W;  // current divider x (px)
+    const tx = (trailPct  / 100) * W;  // lagging trail x (px)
+    const cy = H / 2;
+
+    // Positive only when trail is rightward of current (user dragged left, trail lags right).
+    // When the slider moves right, gap ≤ 0 so no new energy is added;
+    // any existing rightward trail fades naturally as the spring closes the gap.
+    const gap = tx - cx;
+    const intensity = Math.min(1, Math.max(0, gap) / (W * 0.12));
+
+    // ── Energy beam — linear, right-side only ─────────────────────────────
+    if (gap > 1) {
+      const beamW = tx - cx;
+      // Radius capped so it always fits inside the beam and the slider height
+      const r = Math.min(40, beamW / 2, H / 2);
+
+      // Wide blurry fog layer — clip to rounded rect so top/bottom corners are soft
+      ctx.save();
+      ctx.filter = 'blur(14px)';
+      ctx.beginPath();
+      ctx.roundRect(cx, 0, beamW + 20, H, [0, r, r, 0]);
+      ctx.clip();
+      const fog = ctx.createLinearGradient(cx, 0, tx, 0);
+      fog.addColorStop(0,   `rgba(0,215,255,${(0.22 * intensity).toFixed(3)})`);
+      fog.addColorStop(0.6, `rgba(0,215,255,${(0.07 * intensity).toFixed(3)})`);
+      fog.addColorStop(1,   'rgba(0,215,255,0)');
+      ctx.fillStyle = fog;
+      ctx.fillRect(cx, 0, beamW + 40, H);
+      ctx.restore();
+
+      // Tight bright core — same rounded clip, tighter radius for sharper feel
+      ctx.save();
+      ctx.filter = 'blur(3px)';
+      ctx.beginPath();
+      ctx.roundRect(cx, 0, beamW, H, [0, r, r, 0]);
+      ctx.clip();
+      const core = ctx.createLinearGradient(cx, 0, tx, 0);
+      core.addColorStop(0, `rgba(20,240,255,${(0.55 * intensity).toFixed(3)})`);
+      core.addColorStop(1, 'rgba(20,240,255,0)');
+      ctx.fillStyle = core;
+      ctx.fillRect(cx, 0, beamW + 20, H);
+      ctx.restore();
+    }
+
+    // ── Idle lightsaber edge glow — always on, right side of divider ──────
+    const idleA = Math.max(0.04, 0.28 - intensity * 0.22);
+    ctx.save();
+    ctx.filter = 'blur(5px)';
+    const edgeGrad = ctx.createLinearGradient(cx, 0, cx + 14, 0);
+    edgeGrad.addColorStop(0, `rgba(0,220,255,${idleA.toFixed(3)})`);
+    edgeGrad.addColorStop(1, 'rgba(0,220,255,0)');
+    ctx.fillStyle = edgeGrad;
+    ctx.fillRect(cx, 0, 14, H);
+    ctx.restore();
+
+    // ── Thin leading-edge stroke ──────────────────────────────────────────
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,220,255,1)';
+    ctx.shadowBlur  = 4 + intensity * 14;
+    ctx.strokeStyle = `rgba(0,220,255,${(0.08 + intensity * 0.18).toFixed(3)})`;
+    ctx.lineWidth   = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(cx, 0);
+    ctx.lineTo(cx, H);
+    ctx.stroke();
+    ctx.restore();
+
+    // ── Handle button glow — right-biased radial ──────────────────────────
+    const glowR = 28 + intensity * 35;
+    ctx.save();
+    ctx.filter = 'blur(10px)';
+    const btnGrad = ctx.createRadialGradient(cx + 4, cy, 0, cx, cy, glowR);
+    btnGrad.addColorStop(0,   `rgba(0,220,255,${(0.12 + intensity * 0.30).toFixed(3)})`);
+    btnGrad.addColorStop(0.6, `rgba(0,220,255,${(0.05 + intensity * 0.10).toFixed(3)})`);
+    btnGrad.addColorStop(1,   'rgba(0,220,255,0)');
+    ctx.fillStyle = btnGrad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, glowR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    requestAnimationFrame(tick);
+  }
+
+  requestAnimationFrame(tick);
 }
 
 // ===== SCROLL CAMERA PATH =====
@@ -1282,15 +1507,6 @@ window.vimicxTextConfig = {
   }
 };
 
-// Flicker step table — relative positions within the flicker window (0-1)
-const FLICKER_STEPS = [
-  { end: 0.250, from: 1.0, to: 0.3 },
-  { end: 0.344, from: 0.3, to: 0.8 },
-  { end: 0.500, from: 0.8, to: 0.1 },
-  { end: 0.594, from: 0.1, to: 0.6 },
-  { end: 1.000, from: 0.6, to: 0.0 }
-];
-
 function updateFlicker() {
   const p  = animState.scrollProgress;
   const he = getHeroPathEndProgress();
@@ -1301,16 +1517,8 @@ function updateFlicker() {
   if (p < fs)  { animState.screenOpacity = 1; return; }
   if (p >= fe) { animState.screenOpacity = 0; return; }
 
-  const localT = (p - fs) / Math.max(0.0001, fe - fs);
-  let prev = 0;
-  for (const step of FLICKER_STEPS) {
-    if (localT <= step.end) {
-      animState.screenOpacity = step.from + (step.to - step.from) * ((localT - prev) / (step.end - prev));
-      return;
-    }
-    prev = step.end;
-  }
-  animState.screenOpacity = 0;
+  // Simple linear fade 1 → 0 across the window
+  animState.screenOpacity = 1 - (p - fs) / Math.max(0.0001, fe - fs);
 }
 
 window.vimicxFlickerConfig = {
@@ -1349,11 +1557,18 @@ async function loadSceneConfig() {
     }
     if (data.screenFlicker) flickerConfig = { start: clamp01(data.screenFlicker.start), end: clamp01(data.screenFlicker.end) };
     if (data.glassesRise)  glassesRiseConfig = { start: clamp01(data.glassesRise.start),  end: clamp01(data.glassesRise.end)  };
-    const snap = { cameraPath: data.cameraPath || null, textItems: JSON.parse(JSON.stringify(textConfig)), screenFlicker: { ...flickerConfig }, glassesRise: { ...glassesRiseConfig } };
+    if (data.screenLayout && Array.isArray(data.screenLayout) && data.screenLayout.length) {
+      if (boatLoaded) applyScreenLayout(data.screenLayout);
+      else window._pendingScreenLayout = data.screenLayout;
+    }
+    // Only snapshot screenLayout when it was immediately applied (boat already loaded).
+    // If deferred via _pendingScreenLayout, keep null — baselineScreenLayout() will
+    // sync it after the boat loads and the layout is applied.
+    const snap = { cameraPath: data.cameraPath || null, textItems: JSON.parse(JSON.stringify(textConfig)), screenFlicker: { ...flickerConfig }, glassesRise: { ...glassesRiseConfig }, screenLayout: boatLoaded ? (data.screenLayout || null) : null };
     if (window.vimicxSetSavedSnapshot) window.vimicxSetSavedSnapshot(snap);
     else window._pendingSavedSnapshot = snap;
   } catch (_) {
-    const snap = { cameraPath: null, textItems: JSON.parse(JSON.stringify(DEFAULT_TEXT_CONFIG)), screenFlicker: { ...flickerConfig }, glassesRise: { ...glassesRiseConfig } };
+    const snap = { cameraPath: null, textItems: JSON.parse(JSON.stringify(DEFAULT_TEXT_CONFIG)), screenFlicker: { ...flickerConfig }, glassesRise: { ...glassesRiseConfig }, screenLayout: null };
     if (window.vimicxSetSavedSnapshot) window.vimicxSetSavedSnapshot(snap);
     else window._pendingSavedSnapshot = snap;
   }
@@ -1582,7 +1797,7 @@ function updateScene() {
   // Screen opacity (skip in editor â€” screens always full visible)
   if (!editorMode) {
     screenMeshes.forEach(m => {
-      m.material.opacity = animState.screenOpacity * (m.material.wireframe ? 0.25 : 0.7);
+      m.material.opacity = animState.screenOpacity * (m.material.wireframe ? 0.25 : (m.userData.baseOpacity !== undefined ? m.userData.baseOpacity : 0.7));
       m.visible = animState.screenOpacity > 0.01;
     });
     screenEdges.forEach(e => {

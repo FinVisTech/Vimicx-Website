@@ -23,6 +23,8 @@
     if (flickApi) config.screenFlicker = flickApi.get();
     const glassApi = window.vimicxGlassesRise;
     if (glassApi) config.glassesRise = glassApi.get();
+    const screenApi = window.vimicxScreenLayout;
+    if (screenApi) config.screenLayout = screenApi.get();
     return config;
   }
 
@@ -35,6 +37,8 @@
 
   function updateSaveBar() {
     if (!saveBar) return;
+    // Don't show until the snapshot has been initialised from the config file
+    if (savedSnapshot === null) { saveBar.style.display = 'none'; return; }
     const dirty = !snapshotsEqual(getCurrentConfig(), savedSnapshot);
     saveBar.style.display = dirty ? 'flex' : 'none';
   }
@@ -101,6 +105,10 @@
     if (glassApi && savedSnapshot.glassesRise) glassApi.set(savedSnapshot.glassesRise);
     if (window.vimicxFlickerEditorRefresh) window.vimicxFlickerEditorRefresh();
 
+    // Restore screen layout
+    const screenApi = window.vimicxScreenLayout;
+    if (screenApi && savedSnapshot.screenLayout) screenApi.set(savedSnapshot.screenLayout);
+
     updateSaveBar();
   }
 
@@ -109,14 +117,28 @@
   // Called by main.js once the config file is loaded
   window.vimicxSetSavedSnapshot = function (config) {
     savedSnapshot = JSON.parse(JSON.stringify(config));
+    // If no screenLayout was persisted, immediately baseline with whatever is
+    // currently on the meshes (may be default positions if boat is already loaded,
+    // or null if boat hasn't loaded yet — main.js calls baselineScreenLayout()
+    // after buildScreens() to cover the reverse-timing case).
+    if (!savedSnapshot.screenLayout && window.vimicxScreenLayout) {
+      const layout = window.vimicxScreenLayout.get();
+      if (layout) savedSnapshot.screenLayout = layout;
+    }
     updateSaveBar();
   };
 
-  // Called by editors when they make a change
+  // Called by main.js after screens are built with no saved layout override —
+  // silently folds the default positions into the snapshot so the bar stays hidden.
   window.vimicxSaveManager = {
     notifyChange: updateSaveBar,
     save,
-    cancel
+    cancel,
+    baselineScreenLayout() {
+      if (!savedSnapshot) return;
+      const layout = window.vimicxScreenLayout ? window.vimicxScreenLayout.get() : null;
+      if (layout) savedSnapshot.screenLayout = JSON.parse(JSON.stringify(layout));
+    },
   };
 
   // Apply any snapshot that arrived before we were ready
