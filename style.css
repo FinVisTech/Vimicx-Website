@@ -799,6 +799,16 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
   object-fit: cover;
 }
 
+#ceo-photo {
+  transform: scale(1.2);
+}
+
+#advisor-photo {
+  padding: 10% 5% 0 5%;
+  background-color: #f3f4f6;
+  box-sizing: border-box;
+}
+
 .team-card h3 { margin-bottom: 4px; font-size: 1.15rem; color: #fff; }
 .team-card .role { color: var(--cyan); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
 .team-card .bio { color: var(--text-secondary); font-size: 0.88rem; line-height: 1.65; margin-top: auto; }
