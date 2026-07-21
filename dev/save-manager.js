@@ -25,6 +25,12 @@
     if (glassApi) config.glassesRise = glassApi.get();
     const screenApi = window.vimicxScreenLayout;
     if (screenApi) config.screenLayout = screenApi.get();
+    const boatApi = window.vimicxBoatConfig;
+    if (boatApi) config.boatSettings = boatApi.get();
+    const bassApi = window.vimicxBassConfig;
+    if (bassApi) config.bassSettings = bassApi.get();
+    const treeApi = window.vimicxTreeConfig;
+    if (treeApi) config.treeSettings = treeApi.get();
     return config;
   }
 
@@ -108,6 +114,18 @@
     // Restore screen layout
     const screenApi = window.vimicxScreenLayout;
     if (screenApi && savedSnapshot.screenLayout) screenApi.set(savedSnapshot.screenLayout);
+    
+    // Restore boat settings
+    const boatApi = window.vimicxBoatConfig;
+    if (boatApi && savedSnapshot.boatSettings) boatApi.set(savedSnapshot.boatSettings);
+    
+    // Restore bass settings
+    const bassApi = window.vimicxBassConfig;
+    if (bassApi && savedSnapshot.bassSettings) bassApi.set(savedSnapshot.bassSettings);
+
+    // Restore tree settings
+    const treeApi = window.vimicxTreeConfig;
+    if (treeApi && savedSnapshot.treeSettings) treeApi.set(savedSnapshot.treeSettings);
 
     updateSaveBar();
   }
@@ -123,7 +141,19 @@
     // after buildScreens() to cover the reverse-timing case).
     if (!savedSnapshot.screenLayout && window.vimicxScreenLayout) {
       const layout = window.vimicxScreenLayout.get();
-      if (layout) savedSnapshot.screenLayout = layout;
+      if (layout) savedSnapshot.screenLayout = JSON.parse(JSON.stringify(layout));
+    }
+    if (!savedSnapshot.boatSettings && window.vimicxBoatConfig) {
+      const boatSettings = window.vimicxBoatConfig.get();
+      if (boatSettings) savedSnapshot.boatSettings = JSON.parse(JSON.stringify(boatSettings));
+    }
+    if (!savedSnapshot.bassSettings && window.vimicxBassConfig) {
+      const bassSettings = window.vimicxBassConfig.get();
+      if (bassSettings) savedSnapshot.bassSettings = JSON.parse(JSON.stringify(bassSettings));
+    }
+    if (!savedSnapshot.treeSettings && window.vimicxTreeConfig) {
+      const treeSettings = window.vimicxTreeConfig.get();
+      if (treeSettings) savedSnapshot.treeSettings = JSON.parse(JSON.stringify(treeSettings));
     }
     updateSaveBar();
   };
@@ -134,10 +164,16 @@
     notifyChange: updateSaveBar,
     save,
     cancel,
-    baselineScreenLayout() {
+    baselineLoadedMeshes() {
       if (!savedSnapshot) return;
       const layout = window.vimicxScreenLayout ? window.vimicxScreenLayout.get() : null;
       if (layout) savedSnapshot.screenLayout = JSON.parse(JSON.stringify(layout));
+      const boatSettings = window.vimicxBoatConfig ? window.vimicxBoatConfig.get() : null;
+      if (boatSettings) savedSnapshot.boatSettings = JSON.parse(JSON.stringify(boatSettings));
+      const bassSettings = window.vimicxBassConfig ? window.vimicxBassConfig.get() : null;
+      if (bassSettings) savedSnapshot.bassSettings = JSON.parse(JSON.stringify(bassSettings));
+      const treeSettings = window.vimicxTreeConfig ? window.vimicxTreeConfig.get() : null;
+      if (treeSettings) savedSnapshot.treeSettings = JSON.parse(JSON.stringify(treeSettings));
     },
   };
 

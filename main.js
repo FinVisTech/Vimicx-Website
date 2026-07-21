@@ -1,4 +1,4 @@
-﻿/* ============================================
+/* ============================================
    VIMICX â€” Main JavaScript
    Three.js 3D Scene + GSAP Scroll Animations
    ============================================ */
@@ -189,7 +189,7 @@ function buildBoat() {
 
     // Main boat mesh
     const boatMat = new THREE.MeshPhongMaterial({
-      color: 0x053030,
+      color: 0x5aedd5,
       specular: 0xffffff,
       shininess: 60,
       transparent: true,
@@ -204,17 +204,23 @@ function buildBoat() {
 
     // --- BOAT SETTINGS START ---
     const DEG2RAD = Math.PI / 180;
-    boatGroup.position.set(0.00, 0.30, 0.00);
-    boatGroup.rotation.set(2 * DEG2RAD, 180 * DEG2RAD, 1 * DEG2RAD, 'YXZ');
+    boatGroup.position.set(0.00, 0.10, 0.00);
+    boatGroup.rotation.set(-1 * DEG2RAD, 0 * DEG2RAD, -2 * DEG2RAD, 'YXZ');
     boatGroup.scale.set(1.00, 1.00, 1.00);
     const hull = boatGroup.children.find(c => c.name === 'hull');
-    if (hull) hull.material.color.setHex(0x3b0202);
+    if (hull) hull.material.color.setHex(0x317f73);
+    
+    // Apply any pending config settings
+    if (window._pendingBoatSettings) {
+      window.vimicxBoatConfig.set(window._pendingBoatSettings);
+      window._pendingBoatSettings = null;
+    }
     // --- BOAT SETTINGS END ---
 
     // Now that the STL is loaded, build dependent elements
     buildScreens();
     if (window._pendingScreenLayout) { applyScreenLayout(window._pendingScreenLayout); window._pendingScreenLayout = null; }
-    if (window.vimicxSaveManager) window.vimicxSaveManager.baselineScreenLayout();
+    if (window.vimicxSaveManager && window.vimicxSaveManager.baselineLoadedMeshes) window.vimicxSaveManager.baselineLoadedMeshes();
     buildWireframeClones();
     buildWater(); // terrain topology below the hull
     boatLoaded = true;
@@ -238,7 +244,7 @@ function buildBoat() {
 
       buildScreens();
       if (window._pendingScreenLayout) { applyScreenLayout(window._pendingScreenLayout); window._pendingScreenLayout = null; }
-      else if (window.vimicxSaveManager) window.vimicxSaveManager.baselineScreenLayout();
+      else if (window.vimicxSaveManager && window.vimicxSaveManager.baselineLoadedMeshes) window.vimicxSaveManager.baselineLoadedMeshes();
       buildWireframeClones();
       buildWater();
       boatLoaded = true;
@@ -419,6 +425,116 @@ function applyScreenLayout(defs) {
     if (def.mediaPersistPath) loadMediaOntoMesh(mesh, def.mediaPersistPath);
   });
 }
+
+let baseBoatConfig = null;
+window.vimicxBoatConfig = {
+  get: () => {
+    if (typeof boatGroup === 'undefined' || !boatGroup) return null;
+    if (!baseBoatConfig) {
+      const DEG2RAD = Math.PI / 180;
+      const hull = boatGroup.children.find(c => c.name === 'hull');
+      let colorHex = '#ffffff';
+      if (hull && hull.material && hull.material.color) {
+        colorHex = '#' + hull.material.color.getHexString();
+      }
+      const euler = boatGroup.rotation;
+      baseBoatConfig = {
+        pos: [+boatGroup.position.x.toFixed(3), +boatGroup.position.y.toFixed(3), +boatGroup.position.z.toFixed(3)],
+        rot: [+euler.x.toFixed(3), +euler.y.toFixed(3), +euler.z.toFixed(3)],
+        scale: +boatGroup.scale.x.toFixed(3),
+        color: colorHex
+      };
+    }
+    return JSON.parse(JSON.stringify(baseBoatConfig));
+  },
+  set: (cfg) => {
+    if (typeof boatGroup === 'undefined' || !boatGroup) return;
+    baseBoatConfig = JSON.parse(JSON.stringify(cfg));
+    if (cfg.pos) boatGroup.position.set(cfg.pos[0], cfg.pos[1], cfg.pos[2]);
+    if (cfg.rot) boatGroup.rotation.set(cfg.rot[0], cfg.rot[1], cfg.rot[2], 'YXZ');
+    if (cfg.scale !== undefined) boatGroup.scale.set(cfg.scale, cfg.scale, cfg.scale);
+    if (cfg.color) {
+      const hull = boatGroup.children.find(c => c.name === 'hull');
+      if (hull && hull.material) hull.material.color.setHex(parseInt(cfg.color.replace('#', '0x'), 16));
+    }
+  },
+  updateFromEditor: (cfg) => {
+    baseBoatConfig = JSON.parse(JSON.stringify(cfg));
+  }
+};
+
+window.vimicxBassConfig = {
+  get: () => {
+    if (typeof bassModels === 'undefined' || !bassModels.length) return null;
+    return bassModels.map(group => {
+      const euler = group.rotation;
+      let colorHex = group.userData.color;
+      if (typeof colorHex === 'number') colorHex = '#' + colorHex.toString(16).padStart(6, '0');
+      return {
+        pos: [+group.position.x.toFixed(3), +group.position.y.toFixed(3), +group.position.z.toFixed(3)],
+        rot: [+euler.x.toFixed(3), +euler.y.toFixed(3), +euler.z.toFixed(3)],
+        scale: +group.scale.x.toFixed(3),
+        color: colorHex
+      };
+    });
+  },
+  set: (cfgs) => {
+    if (typeof bassModels === 'undefined' || !bassModels.length) return;
+    cfgs.forEach((cfg, i) => {
+      const group = bassModels[i];
+      if (!group) return;
+      if (cfg.pos) group.position.set(cfg.pos[0], cfg.pos[1], cfg.pos[2]);
+      if (cfg.rot) group.rotation.set(cfg.rot[0], cfg.rot[1], cfg.rot[2], 'YXZ');
+      if (cfg.scale !== undefined) group.scale.set(cfg.scale, cfg.scale, cfg.scale);
+      if (cfg.color) {
+        group.userData.color = cfg.color;
+        const colorVal = parseInt(cfg.color.replace('#', '0x'), 16);
+        group.traverse(child => {
+          if (child.material && child.material.color) child.material.color.setHex(colorVal);
+        });
+      }
+    });
+  }
+};
+
+let baseTreeConfig = null;
+window.vimicxTreeConfig = {
+  get: () => {
+    if (typeof treeModelGroup === 'undefined' || !treeModelGroup) return null;
+    if (!baseTreeConfig) {
+      const euler = treeModelGroup.rotation;
+      let colorHex = '#ffffff';
+      treeModelGroup.traverse(child => {
+        if (colorHex === '#ffffff' && child.material && child.material.color) {
+          colorHex = '#' + child.material.color.getHexString();
+        }
+      });
+      baseTreeConfig = {
+        pos: [+treeModelGroup.position.x.toFixed(3), +treeModelGroup.position.y.toFixed(3), +treeModelGroup.position.z.toFixed(3)],
+        rot: [+euler.x.toFixed(3), +euler.y.toFixed(3), +euler.z.toFixed(3)],
+        scale: +treeModelGroup.scale.x.toFixed(3),
+        color: colorHex
+      };
+    }
+    return JSON.parse(JSON.stringify(baseTreeConfig));
+  },
+  set: (cfg) => {
+    if (typeof treeModelGroup === 'undefined' || !treeModelGroup) return;
+    baseTreeConfig = JSON.parse(JSON.stringify(cfg));
+    if (cfg.pos) treeModelGroup.position.set(cfg.pos[0], cfg.pos[1], cfg.pos[2]);
+    if (cfg.rot) treeModelGroup.rotation.set(cfg.rot[0], cfg.rot[1], cfg.rot[2], 'YXZ');
+    if (cfg.scale !== undefined) treeModelGroup.scale.set(cfg.scale, cfg.scale, cfg.scale);
+    if (cfg.color) {
+      const colorVal = parseInt(cfg.color.replace('#', '0x'), 16);
+      treeModelGroup.traverse(child => {
+        if (child.material && child.material.color) child.material.color.setHex(colorVal);
+      });
+    }
+  },
+  updateFromEditor: (cfg) => {
+    baseTreeConfig = JSON.parse(JSON.stringify(cfg));
+  }
+};
 
 window.vimicxScreenLayout = {
   get: () => {
@@ -725,6 +841,11 @@ function buildFish() {
     scene.add(group);
     bassModels.push(group);
   });
+  
+  if (window._pendingBassSettings) {
+    window.vimicxBassConfig.set(window._pendingBassSettings);
+    window._pendingBassSettings = null;
+  }
   // --- BASS SETTINGS END ---
 
   // Load the pre-computed bass wireframe OBJ (replaces runtime STL decimation)
@@ -787,6 +908,11 @@ function buildTree() {
     treeModelGroup.rotation.set(0 * DEG2RAD, 0 * DEG2RAD, 0 * DEG2RAD, 'YXZ');
     treeModelGroup.scale.set(0.30, 0.30, 0.30);
     treeModelGroup.traverse(c => { if (c.material && c.material.color) c.material.color.setHex(0x04ff00); });
+    
+    if (window._pendingTreeSettings) {
+      window.vimicxTreeConfig.set(window._pendingTreeSettings);
+      window._pendingTreeSettings = null;
+    }
     // --- TREE SETTINGS END ---
 
     console.log('Tree wireframe loaded');
@@ -1590,14 +1716,45 @@ async function loadSceneConfig() {
       if (boatLoaded) applyScreenLayout(data.screenLayout);
       else window._pendingScreenLayout = data.screenLayout;
     }
-    // Only snapshot screenLayout when it was immediately applied (boat already loaded).
-    // If deferred via _pendingScreenLayout, keep null — baselineScreenLayout() will
-    // sync it after the boat loads and the layout is applied.
-    const snap = { cameraPath: data.cameraPath || null, textItems: JSON.parse(JSON.stringify(textConfig)), screenFlicker: { ...flickerConfig }, glassesRise: { ...glassesRiseConfig }, screenLayout: boatLoaded ? (data.screenLayout || null) : null };
+    
+    if (data.boatSettings) {
+      if (typeof boatGroup !== 'undefined' && boatGroup && boatGroup.children.length > 0) window.vimicxBoatConfig.set(data.boatSettings);
+      else window._pendingBoatSettings = data.boatSettings;
+    }
+    
+    if (data.bassSettings) {
+      if (typeof bassModels !== 'undefined' && bassModels.length > 0) window.vimicxBassConfig.set(data.bassSettings);
+      else window._pendingBassSettings = data.bassSettings;
+    }
+    
+    if (data.treeSettings) {
+      if (typeof treeModelGroup !== 'undefined' && treeModelGroup && treeModelGroup.children.length > 0) window.vimicxTreeConfig.set(data.treeSettings);
+      else window._pendingTreeSettings = data.treeSettings;
+    }
+
+    const snap = { 
+      cameraPath: data.cameraPath || null, 
+      textItems: JSON.parse(JSON.stringify(textConfig)), 
+      screenFlicker: { ...flickerConfig }, 
+      glassesRise: { ...glassesRiseConfig }, 
+      screenLayout: boatLoaded ? (data.screenLayout || null) : null,
+      boatSettings: boatLoaded ? (data.boatSettings || null) : null,
+      bassSettings: (typeof bassModels !== 'undefined' && bassModels.length > 0) ? (data.bassSettings || null) : null,
+      treeSettings: (typeof treeModelGroup !== 'undefined' && treeModelGroup) ? (data.treeSettings || null) : null
+    };
     if (window.vimicxSetSavedSnapshot) window.vimicxSetSavedSnapshot(snap);
     else window._pendingSavedSnapshot = snap;
   } catch (_) {
-    const snap = { cameraPath: null, textItems: JSON.parse(JSON.stringify(DEFAULT_TEXT_CONFIG)), screenFlicker: { ...flickerConfig }, glassesRise: { ...glassesRiseConfig }, screenLayout: null };
+    const snap = { 
+      cameraPath: null, 
+      textItems: JSON.parse(JSON.stringify(DEFAULT_TEXT_CONFIG)), 
+      screenFlicker: { ...flickerConfig }, 
+      glassesRise: { ...glassesRiseConfig }, 
+      screenLayout: null,
+      boatSettings: null,
+      bassSettings: null,
+      treeSettings: null
+    };
     if (window.vimicxSetSavedSnapshot) window.vimicxSetSavedSnapshot(snap);
     else window._pendingSavedSnapshot = snap;
   }

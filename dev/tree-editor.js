@@ -108,6 +108,15 @@
       });
     }
 
+    if (window.vimicxTreeConfig && window.vimicxTreeConfig.updateFromEditor) {
+      window.vimicxTreeConfig.updateFromEditor({
+        pos: [parseFloat(sl.px.value), parseFloat(sl.py.value), parseFloat(sl.pz.value)],
+        rot: [parseFloat(sl.pitch.value) * DEG2RAD, parseFloat(sl.yaw.value) * DEG2RAD, parseFloat(sl.roll.value) * DEG2RAD],
+        scale: parseFloat(sl.scale.value),
+        color: sl.color.value || '#ffffff'
+      });
+    }
+
     updateDisplays();
   }
 
