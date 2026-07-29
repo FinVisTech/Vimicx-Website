@@ -114,7 +114,7 @@
   // ===== Generate coordinate log =====
   function generateLog() {
     const data = {
-      _info: 'Vimicx Tree Coordinates',
+      _info: 'Vimix Tree Coordinates',
       position: {
         x: parseFloat(parseFloat(sl.px.value).toFixed(2)),
         y: parseFloat(parseFloat(sl.py.value).toFixed(2)),
@@ -137,7 +137,7 @@
     return `// --- TREE SETTINGS START ---\n${jsonStr}\n// --- TREE SETTINGS END ---\n`;
   }
 
-  window.vimicxEditorLogs['tree'] = generateLog;
+  window.vimixEditorLogs['tree'] = generateLog;
 
   function copyCoords() {
     const text = generateLog();

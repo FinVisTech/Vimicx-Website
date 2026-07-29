@@ -1,5 +1,5 @@
 ﻿/* ============================================
-   VIMICX â€” Main JavaScript
+   VIMIX â€” Main JavaScript
    Three.js 3D Scene + GSAP Scroll Animations
    ============================================ */
 
@@ -43,7 +43,7 @@ let animState = {
 
 // Boat-local camera offsets â€” these define WHERE on the boat the camera sits
 // and WHERE it looks, in the boat's own coordinate frame.
-// Derived from exported Vimicx Camera Coordinates (yaw 90Â°, pitch -45Â°).
+// Derived from exported Vimix Camera Coordinates (yaw 90Â°, pitch -45Â°).
 const CAM_LOCAL_POS = new THREE.Vector3(1.7, 2.1, 0.0);
 const CAM_LOCAL_LOOKAT = new THREE.Vector3(8.77, -4.97, 0.0);
 const BOAT_TARGET_YAW = 0; // target yaw angle for the cinematic camera shot
@@ -214,7 +214,7 @@ function buildBoat() {
     // Now that the STL is loaded, build dependent elements
     buildScreens();
     if (window._pendingScreenLayout) { applyScreenLayout(window._pendingScreenLayout); window._pendingScreenLayout = null; }
-    if (window.vimicxSaveManager) window.vimicxSaveManager.baselineScreenLayout();
+    if (window.vimixSaveManager) window.vimixSaveManager.baselineScreenLayout();
     buildWireframeClones();
     buildWater(); // terrain topology below the hull
     boatLoaded = true;
@@ -238,7 +238,7 @@ function buildBoat() {
 
       buildScreens();
       if (window._pendingScreenLayout) { applyScreenLayout(window._pendingScreenLayout); window._pendingScreenLayout = null; }
-      else if (window.vimicxSaveManager) window.vimicxSaveManager.baselineScreenLayout();
+      else if (window.vimixSaveManager) window.vimixSaveManager.baselineScreenLayout();
       buildWireframeClones();
       buildWater();
       boatLoaded = true;
@@ -420,7 +420,7 @@ function applyScreenLayout(defs) {
   });
 }
 
-window.vimicxScreenLayout = {
+window.vimixScreenLayout = {
   get: () => {
     const mains = screenMeshes.filter(m => !m.material.wireframe);
     if (!mains.length) return null;
@@ -440,7 +440,7 @@ window.vimicxScreenLayout = {
   set: (defs) => {
     if (boatLoaded) {
       applyScreenLayout(defs);
-      if (window.vimicxScreenEditorRefresh) window.vimicxScreenEditorRefresh();
+      if (window.vimixScreenEditorRefresh) window.vimixScreenEditorRefresh();
     } else {
       window._pendingScreenLayout = defs;
     }
@@ -1397,7 +1397,7 @@ function applyScrollCameraPath() {
   applyCameraPose(evaluateCameraPath(animState.scrollProgress));
 }
 
-window.vimicxCameraPath = {
+window.vimixCameraPath = {
   getPath: () => cloneCameraPath(getCameraPath()),
   getDefaultPath: () => cloneCameraPath(buildDefaultCameraPath()),
   setPath: (frames) => {
@@ -1483,11 +1483,11 @@ function updateTextVisibility() {
   });
 }
 
-window.vimicxTextConfig = {
+window.vimixTextConfig = {
   getItems: () => JSON.parse(JSON.stringify(textConfig)),
   setItems: (items) => {
     textConfig = items.map(normalizeTextItem);
-    if (window.vimicxTextEditorRefresh) window.vimicxTextEditorRefresh();
+    if (window.vimixTextEditorRefresh) window.vimixTextEditorRefresh();
   },
   getDefaultItems: () => JSON.parse(JSON.stringify(DEFAULT_TEXT_CONFIG)),
   getHeroEnd: () => getHeroPathEndProgress(),
@@ -1549,7 +1549,7 @@ function updateFlicker() {
   animState.screenOpacity = 1 - (p - fs) / Math.max(0.0001, fe - fs);
 }
 
-window.vimicxFlickerConfig = {
+window.vimixFlickerConfig = {
   get: () => ({ ...flickerConfig }),
   set: (cfg) => { flickerConfig = { start: clamp01(cfg.start), end: clamp01(cfg.end) }; }
 };
@@ -1566,7 +1566,7 @@ function updateGlassesRise() {
   animState.glassesProgress = (p - gs) / Math.max(0.0001, ge - gs);
 }
 
-window.vimicxGlassesRise = {
+window.vimixGlassesRise = {
   get: () => ({ ...glassesRiseConfig }),
   set: (cfg) => { glassesRiseConfig = { start: clamp01(cfg.start), end: clamp01(cfg.end) }; }
 };
@@ -1594,11 +1594,11 @@ async function loadSceneConfig() {
     // If deferred via _pendingScreenLayout, keep null — baselineScreenLayout() will
     // sync it after the boat loads and the layout is applied.
     const snap = { cameraPath: data.cameraPath || null, textItems: JSON.parse(JSON.stringify(textConfig)), screenFlicker: { ...flickerConfig }, glassesRise: { ...glassesRiseConfig }, screenLayout: boatLoaded ? (data.screenLayout || null) : null };
-    if (window.vimicxSetSavedSnapshot) window.vimicxSetSavedSnapshot(snap);
+    if (window.vimixSetSavedSnapshot) window.vimixSetSavedSnapshot(snap);
     else window._pendingSavedSnapshot = snap;
   } catch (_) {
     const snap = { cameraPath: null, textItems: JSON.parse(JSON.stringify(DEFAULT_TEXT_CONFIG)), screenFlicker: { ...flickerConfig }, glassesRise: { ...glassesRiseConfig }, screenLayout: null };
-    if (window.vimicxSetSavedSnapshot) window.vimicxSetSavedSnapshot(snap);
+    if (window.vimixSetSavedSnapshot) window.vimixSetSavedSnapshot(snap);
     else window._pendingSavedSnapshot = snap;
   }
 }

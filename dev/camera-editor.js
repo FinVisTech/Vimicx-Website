@@ -125,7 +125,7 @@
   function generateLog() {
     const lookAt = getLookAtFromAngles();
     const data = {
-      _info: 'Vimicx Camera Coordinates — paste into your next prompt',
+      _info: 'Vimix Camera Coordinates — paste into your next prompt',
       position: {
         x: parseFloat(parseFloat(sl.px.value).toFixed(2)),
         y: parseFloat(parseFloat(sl.py.value).toFixed(2)),
@@ -149,7 +149,7 @@
     return `// --- CAMERA SETTINGS START ---\n${jsonStr}\n// --- CAMERA SETTINGS END ---\n`;
   }
 
-  window.vimicxEditorLogs['camera'] = generateLog;
+  window.vimixEditorLogs['camera'] = generateLog;
 
   function copyCoords() {
     const text = generateLog();

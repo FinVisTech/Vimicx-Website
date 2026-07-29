@@ -185,7 +185,7 @@
     return `// --- SCENE SETTINGS START ---\n${snippet}// --- SCENE SETTINGS END ---\n`;
   }
 
-  window.vimicxEditorLogs['scene'] = generateLog;
+  window.vimixEditorLogs['scene'] = generateLog;
 
   function copySettings() {
     const text = generateLog();

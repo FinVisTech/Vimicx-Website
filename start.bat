@@ -1,7 +1,7 @@
 @echo off
-title Vimicx Dev Server
+title Vimix Dev Server
 echo ========================================
-echo   VIMICX - Starting Local Dev Server
+echo   VIMIX - Starting Local Dev Server
 echo ========================================
 echo.
 

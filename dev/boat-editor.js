@@ -108,7 +108,7 @@
   // ===== Generate coordinate log =====
   function generateLog() {
     const data = {
-      _info: 'Vimicx Boat Coordinates',
+      _info: 'Vimix Boat Coordinates',
       position: {
         x: parseFloat(parseFloat(sl.px.value).toFixed(2)),
         y: parseFloat(parseFloat(sl.py.value).toFixed(2)),
@@ -132,7 +132,7 @@
     return `// --- BOAT SETTINGS START ---\n${jsonStr}\n// --- BOAT SETTINGS END ---\n`;
   }
 
-  window.vimicxEditorLogs['boat'] = generateLog;
+  window.vimixEditorLogs['boat'] = generateLog;
 
   function copyCoords() {
     const text = generateLog();

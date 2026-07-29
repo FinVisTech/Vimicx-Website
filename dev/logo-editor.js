@@ -63,7 +63,7 @@
     return `/* --- LOGO SETTINGS START --- */\n${snippet}/* --- LOGO SETTINGS END --- */\n`;
   }
 
-  window.vimicxEditorLogs['logo'] = generateLog;
+  window.vimixEditorLogs['logo'] = generateLog;
 
   function copySettings() {
     const text = generateLog();

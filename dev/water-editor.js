@@ -86,7 +86,7 @@
     return `// --- WATER SETTINGS START ---\n${snippet}// --- WATER SETTINGS END ---\n`;
   }
 
-  window.vimicxEditorLogs['water'] = generateLog;
+  window.vimixEditorLogs['water'] = generateLog;
 
   function copySettings() {
     const text = generateLog();

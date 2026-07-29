@@ -138,7 +138,7 @@
     if (typeof bassModels === 'undefined' || bassModels.length === 0) return '{}';
     
     const data = {
-      _info: 'Vimicx Bass Coordinates',
+      _info: 'Vimix Bass Coordinates',
       _jsSnippet: 'const DEG2RAD = Math.PI / 180;\nbassModels = [];\nconst bassDefs = [\n'
     };
     
@@ -161,7 +161,7 @@
     return `// --- BASS SETTINGS START ---\n${jsonStr}\n// --- BASS SETTINGS END ---\n`;
   }
 
-  window.vimicxEditorLogs['bass'] = generateLog;
+  window.vimixEditorLogs['bass'] = generateLog;
 
   function copyCoords() {
     const text = generateLog();

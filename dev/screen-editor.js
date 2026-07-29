@@ -323,7 +323,7 @@
   // ===== Generate export log =====
   function generateLog() {
     const log = {
-      _info: 'Vimicx Screen Layout — paste this log into your next prompt',
+      _info: 'Vimix Screen Layout — paste this log into your next prompt',
       _axes: 'X = boat length (bow at +X), Z = beam/width, Y = height',
       screenCount: editorScreens.length,
       screens: editorScreens.map((s, i) => ({
@@ -350,7 +350,7 @@
     return `// --- SCREEN SETTINGS START ---\n${jsonStr}\n// --- SCREEN SETTINGS END ---\n`;
   }
 
-  window.vimicxEditorLogs['screens'] = generateLog;
+  window.vimixEditorLogs['screens'] = generateLog;
 
   function exportToClipboard() {
     const text = generateLog();
