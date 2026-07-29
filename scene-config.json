@@ -265,5 +265,91 @@
       "color": "#ffffff",
       "mediaPersistPath": "img/screen-media/SideScanDemoImage.png"
     }
-  ]
+  ],
+  "boatSettings": {
+    "pos": [
+      0,
+      0.2,
+      0
+    ],
+    "rot": [
+      -0.03490658503988659,
+      0,
+      -0.03490658503988659
+    ],
+    "scale": 1,
+    "color": "#245a53"
+  },
+  "bassSettings": [
+    {
+      "pos": [
+        5.5,
+        -1.4,
+        -2.6
+      ],
+      "rot": [
+        0,
+        1.03,
+        0
+      ],
+      "scale": 0.35,
+      "color": "0x00eed9"
+    },
+    {
+      "pos": [
+        3.5,
+        -1.8,
+        -3
+      ],
+      "rot": [
+        0,
+        0.524,
+        0
+      ],
+      "scale": 0.3,
+      "color": "#ff3300"
+    },
+    {
+      "pos": [
+        7.5,
+        -1.1,
+        -1.5
+      ],
+      "rot": [
+        0,
+        1.396,
+        0
+      ],
+      "scale": 0.35,
+      "color": "0x00e5ed"
+    },
+    {
+      "pos": [
+        9.5,
+        -2.1,
+        1.6
+      ],
+      "rot": [
+        0,
+        0.785,
+        0
+      ],
+      "scale": 0.25,
+      "color": "0x1cbcf0"
+    }
+  ],
+  "treeSettings": {
+    "pos": [
+      8.5,
+      -2.5,
+      0.9
+    ],
+    "rot": [
+      0,
+      0,
+      0
+    ],
+    "scale": 0.3,
+    "color": "#317dff"
+  }
 }

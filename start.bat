@@ -12,4 +12,4 @@ start "" cmd /c "timeout /t 2 /nobreak >nul && start http://127.0.0.1:8080/?dev"
 echo Server running at http://127.0.0.1:8080/?dev
 echo Press Ctrl+C to stop.
 echo.
-npx.cmd -y http-server . --port 8080 -c-1
+python dev-server.py

@@ -771,6 +771,12 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
   box-shadow: 0 24px 60px rgba(0,0,0,0.4);
 }
 
+#team-advisor {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: calc(50% - 16px);
+}
+
 .team-photo {
   width: 120px;
   height: 120px;
@@ -791,6 +797,16 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+#ceo-photo {
+  transform: scale(1.2);
+}
+
+#advisor-photo {
+  padding: 10% 5% 0 5%;
+  background-color: #f3f4f6;
+  box-sizing: border-box;
 }
 
 .team-card h3 { margin-bottom: 4px; font-size: 1.15rem; color: #fff; }
@@ -1008,6 +1024,7 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
   .about-visual { min-height: 250px; }
 
   .team-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
+  #team-advisor { width: 100%; }
 
   .footer-top { flex-direction: column; }
   .footer-links { gap: 30px; }

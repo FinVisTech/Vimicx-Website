@@ -27,8 +27,14 @@
   const dupBtn    = document.getElementById('editor-dup-btn');
   const delBtn    = document.getElementById('editor-del-btn');
   const exportBtn = document.getElementById('editor-export-btn');
-  const logBtn    = document.getElementById('editor-log-btn');
+  const logBtn    = document.getElementById('screen-log-btn');
   const logOutput = document.getElementById('editor-log-output');
+
+  // Media upload refs
+  const mediaInput   = document.getElementById('es-media-upload');
+  const mediaInfo    = document.getElementById('es-media-info');
+  const mediaNameEl  = document.getElementById('es-media-name');
+  const mediaClearBtn = document.getElementById('es-media-clear');
 
   // Sliders
   const sl = {
@@ -109,6 +115,137 @@
     });
   }
 
+  // ===== Media helpers =====
+  function updateMediaUI() {
+    if (selectedIdx < 0 || !editorScreens[selectedIdx]) return;
+    const name = editorScreens[selectedIdx].mesh.userData.mediaName;
+    if (name) {
+      mediaNameEl.textContent = name;
+      mediaInfo.style.display = 'flex';
+    } else {
+      mediaInfo.style.display = 'none';
+    }
+  }
+
+  function disposeScreenMedia(mesh) {
+    if (mesh.userData.videoEl) {
+      mesh.userData.videoEl.pause();
+      mesh.userData.videoEl.src = '';
+      mesh.userData.videoEl = null;
+    }
+    if (mesh.userData.mediaTexture) {
+      mesh.userData.mediaTexture.dispose();
+      mesh.userData.mediaTexture = null;
+    }
+    if (mesh.userData.mediaUrl) {
+      URL.revokeObjectURL(mesh.userData.mediaUrl);
+      mesh.userData.mediaUrl = null;
+    }
+    mesh.userData.mediaName = null;
+    mesh.userData.mediaType = null;
+  }
+
+  function clearMedia() {
+    if (selectedIdx < 0 || !editorScreens[selectedIdx]) return;
+    const s = editorScreens[selectedIdx];
+    disposeScreenMedia(s.mesh);
+    s.mesh.material.map           = null;
+    s.mesh.material.color.set(s.color);
+    s.mesh.material.opacity       = 0.7;
+    s.mesh.userData.baseOpacity   = undefined;
+    s.mesh.material.needsUpdate   = true;
+    mediaInput.value = '';
+    mediaInfo.style.display = 'none';
+  }
+
+  function applyMedia(file) {
+    if (selectedIdx < 0 || !editorScreens[selectedIdx]) return;
+    const s = editorScreens[selectedIdx];
+    const mesh = s.mesh;
+
+    // Clean up any existing media on this screen first
+    disposeScreenMedia(mesh);
+    mesh.material.map = null;
+    mesh.material.needsUpdate = true;
+
+    const url = URL.createObjectURL(file);
+    mesh.userData.mediaUrl  = url;
+    mesh.userData.mediaName = file.name;
+
+    // Helper: correct the horizontal mirror caused by the screen's +90° Y rotation
+    function fixTextureOrientation(tex) {
+      tex.repeat.set(-1, 1);
+      tex.offset.set(1, 0);
+    }
+
+    if (file.type.startsWith('video/')) {
+      mesh.userData.mediaType = 'video';
+
+      const video = document.createElement('video');
+      video.src         = url;
+      video.loop        = true;
+      video.muted       = true;
+      video.playsInline = true;
+      video.play();
+
+      const texture = new THREE.VideoTexture(video);
+      texture.minFilter = THREE.LinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      fixTextureOrientation(texture);
+
+      mesh.userData.videoEl      = video;
+      mesh.userData.mediaTexture = texture;
+      mesh.material.map          = texture;
+      mesh.material.color.set(0xffffff);
+      mesh.material.opacity      = 1;
+      mesh.userData.baseOpacity  = 1;
+      mesh.material.needsUpdate  = true;
+    } else {
+      mesh.userData.mediaType = 'image';
+
+      const img = new Image();
+      img.onload = () => {
+        const texture = new THREE.Texture(img);
+        fixTextureOrientation(texture);
+        texture.needsUpdate = true;
+
+        mesh.userData.mediaTexture = texture;
+        mesh.material.map          = texture;
+        mesh.material.color.set(0xffffff);
+        mesh.material.opacity      = 1;
+        mesh.userData.baseOpacity  = 1;
+        mesh.material.needsUpdate  = true;
+      };
+      img.src = url;
+    }
+
+    // Use a local preview immediately. The persistent path is set only after
+    // the dev server confirms the committed static asset path.
+    const safeName = file.name.replace(/[^A-Za-z0-9._-]/g, '_');
+    mesh.userData.mediaPersistPath = null;
+    mesh.userData.mediaName        = safeName;
+
+    // Upload to dev server so the file survives page reloads
+    fetch(`/upload-media?name=${encodeURIComponent(file.name)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': file.type },
+      body: file,
+    }).then(r => r.json()).then(data => {
+      if (data.ok) {
+        mesh.userData.mediaPersistPath = data.path; // confirm server path
+        if (window.vimixSaveManager) window.vimixSaveManager.notifyChange();
+      } else {
+        throw new Error(data.error || 'upload failed');
+      }
+    }).catch((err) => {
+      console.error('[Screen Editor] media upload failed:', err);
+      mediaNameEl.textContent = `${safeName} (upload failed - start dev server)`;
+      mediaInfo.style.display = 'flex';
+    });
+
+    updateMediaUI();
+  }
+
   // ===== Select a screen =====
   function selectScreen(idx) {
     // Unhighlight previous
@@ -131,18 +268,21 @@
       s.edges.material.opacity = 1;
     }
 
-    // Update sliders (rotation: radians → degrees for UI)
+    // Update sliders — read rotation as YXZ Euler from quaternion to avoid
+    // gimbal lock at Y≈90° (XYZ order collapses X and Z axes at that angle).
     sl.px.value = m.position.x;
     sl.py.value = m.position.y;
     sl.pz.value = m.position.z;
-    sl.rx.value = toDeg(m.rotation.x);
-    sl.ry.value = toDeg(m.rotation.y);
-    sl.rz.value = toDeg(m.rotation.z);
+    const _eYXZ = new THREE.Euler().setFromQuaternion(m.quaternion, 'YXZ');
+    sl.rx.value = toDeg(_eYXZ.x);
+    sl.ry.value = toDeg(_eYXZ.y);
+    sl.rz.value = toDeg(_eYXZ.z);
     sl.w.value = s.w;
     sl.h.value = s.h;
     sl.color.value = '#' + s.color.toString(16).padStart(6, '0');
 
     updateValueDisplays();
+    updateMediaUI();
   }
 
   // ===== Update value displays =====
@@ -165,8 +305,8 @@
 
     // Position
     m.position.set(parseFloat(sl.px.value), parseFloat(sl.py.value), parseFloat(sl.pz.value));
-    // Rotation (degrees → radians)
-    m.rotation.set(toRad(sl.rx.value), toRad(sl.ry.value), toRad(sl.rz.value));
+    // Rotation — always apply as YXZ to avoid gimbal lock at Y≈90°
+    m.rotation.set(toRad(sl.rx.value), toRad(sl.ry.value), toRad(sl.rz.value), 'YXZ');
 
     // Sync edges and grid
     if (s.edges) {
@@ -226,6 +366,7 @@
       color, transparent: true, opacity: 0.7, side: THREE.DoubleSide
     });
     const mesh = new THREE.Mesh(geo, mat);
+    mesh.rotation.order = 'YXZ';
     mesh.position.set(0, 1, 0);
     boatGroup.add(mesh);
     screenMeshes.push(mesh);
@@ -265,6 +406,7 @@
       color, transparent: true, opacity: 0.7, side: THREE.DoubleSide
     });
     const mesh = new THREE.Mesh(geo, mat);
+    mesh.rotation.order = 'YXZ';
     mesh.position.copy(src.mesh.position);
     mesh.position.x += 0.3; // offset so it's visible
     mesh.rotation.copy(src.mesh.rotation);
@@ -303,7 +445,7 @@
     const s = editorScreens[selectedIdx];
 
     // Remove from scene
-    if (s.mesh) { boatGroup.remove(s.mesh); s.mesh.geometry.dispose(); }
+    if (s.mesh) { disposeScreenMedia(s.mesh); boatGroup.remove(s.mesh); s.mesh.geometry.dispose(); }
     if (s.edges) { boatGroup.remove(s.edges); s.edges.geometry.dispose(); }
     if (s.grid) { boatGroup.remove(s.grid); s.grid.geometry.dispose(); }
 
@@ -334,11 +476,12 @@
           y: parseFloat(s.mesh.position.y.toFixed(3)),
           z: parseFloat(s.mesh.position.z.toFixed(3)),
         },
-        rotation: {
-          x: parseFloat(s.mesh.rotation.x.toFixed(3)),
-          y: parseFloat(s.mesh.rotation.y.toFixed(3)),
-          z: parseFloat(s.mesh.rotation.z.toFixed(3)),
-        },
+        rotation: (() => {
+          // Editor uses YXZ order internally; convert back to XYZ for buildScreens() compatibility
+          const q = new THREE.Quaternion().setFromEuler(s.mesh.rotation);
+          const e = new THREE.Euler().setFromQuaternion(q, 'XYZ');
+          return { x: parseFloat(e.x.toFixed(3)), y: parseFloat(e.y.toFixed(3)), z: parseFloat(e.z.toFixed(3)) };
+        })(),
         size: {
           width: parseFloat(s.w.toFixed ? s.w.toFixed(3) : s.w),
           height: parseFloat(s.h.toFixed ? s.h.toFixed(3) : s.h),
@@ -399,7 +542,7 @@
 
     // Make all screens fully visible
     screenMeshes.forEach(m => {
-      m.material.opacity = m.material.wireframe ? 0.25 : 0.7;
+      m.material.opacity = m.material.wireframe ? 0.25 : (m.userData.baseOpacity !== undefined ? m.userData.baseOpacity : 0.7);
     });
     screenEdges.forEach(e => {
       e.material.opacity = 0.9;
@@ -450,12 +593,19 @@
     dupBtn.addEventListener('click', duplicateScreen);
     delBtn.addEventListener('click', deleteScreen);
     exportBtn.addEventListener('click', exportToClipboard);
-    logBtn.addEventListener('click', showLogConsole);
+    if (logBtn) logBtn.addEventListener('click', showLogConsole);
 
     // Slider input events
     Object.keys(sl).forEach(key => {
       sl[key].addEventListener('input', applySliders);
     });
+
+    // Media upload
+    mediaInput.addEventListener('change', (e) => {
+      if (e.target.files[0]) applyMedia(e.target.files[0]);
+      e.target.value = ''; // reset so the same file can be re-uploaded
+    });
+    mediaClearBtn.addEventListener('click', clearMedia);
 
     // Preset buttons for quick tilt/yaw
     document.querySelectorAll('.editor-presets button').forEach(btn => {
@@ -485,6 +635,15 @@
       }
     });
   }
+
+  // ===== Public refresh hook (called by save-manager cancel/restore) =====
+  window.vimixScreenEditorRefresh = function () {
+    if (!isOpen) return;
+    syncFromMain();
+    rebuildList();
+    const target = Math.min(Math.max(selectedIdx, 0), editorScreens.length - 1);
+    if (editorScreens.length > 0) selectScreen(target);
+  };
 
   // ===== Boot =====
   bindEvents();

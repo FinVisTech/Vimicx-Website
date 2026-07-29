@@ -410,19 +410,19 @@
       <div class="team-grid">
         <div class="team-card reveal" id="team-ceo">
           <div class="team-photo">
-            <img src="img/ceo.jpg" alt="Luke Wunderling - CEO of Vimix" id="ceo-photo" width="120" height="120"
+            <img src="img/luke.png" alt="Luke Wunderling - CEO of Vimix" id="ceo-photo" width="120" height="120"
               loading="lazy" decoding="async">
           </div>
           <h3>Luke Wunderling</h3>
-          <div class="role">Co-Founder & CEO</div>
+          <div class="role">CEO</div>
         </div>
         <div class="team-card reveal" id="team-cto">
           <div class="team-photo">
-            <img src="img/cto.jpg" alt="Dalton Langley - CTO of Vimix" id="cto-photo" width="120" height="120"
+            <img src="img/dalton.png" alt="Dalton Langley - CTO of Vimix" id="cto-photo" width="120" height="120"
               loading="lazy" decoding="async">
           </div>
           <h3>Dalton Langley</h3>
-          <div class="role">Co-Founder & CTO</div>
+          <div class="role">CTO</div>
         </div>
         <!--
         <div class="team-card reveal" id="team-board">
@@ -436,6 +436,13 @@
             growth.</p>
         </div>
         -->
+        <div class="team-card reveal" id="team-advisor">
+          <div class="team-photo">
+            <img src="img/jason.png" alt="Jason Rapoport - Strategic Advisor at Vimix" id="advisor-photo" width="120" height="120" loading="lazy" decoding="async">
+          </div>
+          <h3>Jason Rapoport</h3>
+          <div class="role">Strategic Advisor</div>
+        </div>
       </div>
     </section>
 
@@ -1098,7 +1105,7 @@
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
   <script defer src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
-  <script defer src="main.js"></script>
+  <script defer src="main.js?v=3"></script>
   <script defer src="supabase.js"></script>
 
   <script>
@@ -1140,44 +1147,46 @@
       }
 
       // Dynamically load dev scripts
+      const v = '?v=' + Date.now();
+
       const saveManagerScript = document.createElement('script');
-      saveManagerScript.src = 'dev/save-manager.js';
+      saveManagerScript.src = 'dev/save-manager.js' + v;
       document.body.appendChild(saveManagerScript);
 
       const screenEditorScript = document.createElement('script');
-      screenEditorScript.src = 'dev/screen-editor.js';
+      screenEditorScript.src = 'dev/screen-editor.js' + v;
       document.body.appendChild(screenEditorScript);
 
       const cameraEditorScript = document.createElement('script');
-      cameraEditorScript.src = 'dev/camera-editor.js';
+      cameraEditorScript.src = 'dev/camera-editor.js' + v;
       document.body.appendChild(cameraEditorScript);
 
       const textEditorScript = document.createElement('script');
-      textEditorScript.src = 'dev/text-editor.js';
+      textEditorScript.src = 'dev/text-editor.js' + v;
       document.body.appendChild(textEditorScript);
 
       const bassEditorScript = document.createElement('script');
-      bassEditorScript.src = 'dev/bass-editor.js';
+      bassEditorScript.src = 'dev/bass-editor.js' + v;
       document.body.appendChild(bassEditorScript);
 
       const treeEditorScript = document.createElement('script');
-      treeEditorScript.src = 'dev/tree-editor.js';
+      treeEditorScript.src = 'dev/tree-editor.js' + v;
       document.body.appendChild(treeEditorScript);
 
       const boatEditorScript = document.createElement('script');
-      boatEditorScript.src = 'dev/boat-editor.js';
+      boatEditorScript.src = 'dev/boat-editor.js' + v;
       document.body.appendChild(boatEditorScript);
 
       const sceneEditorScript = document.createElement('script');
-      sceneEditorScript.src = 'dev/scene-editor.js';
+      sceneEditorScript.src = 'dev/scene-editor.js' + v;
       document.body.appendChild(sceneEditorScript);
 
       const waterEditorScript = document.createElement('script');
-      waterEditorScript.src = 'dev/water-editor.js';
+      waterEditorScript.src = 'dev/water-editor.js' + v;
       document.body.appendChild(waterEditorScript);
 
       const logoEditorScript = document.createElement('script');
-      logoEditorScript.src = 'dev/logo-editor.js';
+      logoEditorScript.src = 'dev/logo-editor.js' + v;
       document.body.appendChild(logoEditorScript);
     }
   </script>
